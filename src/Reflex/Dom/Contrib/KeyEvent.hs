@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
-{-# LANGUAGE RecursiveDo              #-}
 
 module Reflex.Dom.Contrib.KeyEvent where
 

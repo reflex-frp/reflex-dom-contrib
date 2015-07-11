@@ -8,6 +8,7 @@
 , http-types
 , lens
 , mtl
+, readable
 , reflex
 , reflex-dom
 , safe
@@ -15,6 +16,7 @@
 , string-conv
 , text
 , these
+, time
 , transformers
 , webkitgtk3-javascriptcore
 }:
@@ -32,6 +34,7 @@ mkDerivation {
     http-types
     lens
     mtl
+    readable
     reflex
     reflex-dom
     safe
@@ -39,6 +42,7 @@ mkDerivation {
     string-conv
     text
     these
+    time
     transformers
   ];
   license = null;
