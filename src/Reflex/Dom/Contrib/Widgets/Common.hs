@@ -20,6 +20,7 @@ import           Control.Lens
 import           Control.Monad
 import           Data.Default
 import           Data.Map (Map)
+import qualified Data.Map as M
 import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
@@ -313,4 +314,18 @@ inputOnEnter wFunc cfg = do
     w <- wFunc cfg
     holdDyn (_widgetConfig_initialValue cfg) $ blurOrEnter w
 
+
+------------------------------------------------------------------------------
+-- | A list dropdown widget.
+listDropdown :: (MonadWidget t m)
+  => Dynamic t [a]
+  -> (a -> String)
+  -> Dynamic t (Map String String)
+  -> String
+  -> m (Dynamic t (Maybe a))
+listDropdown xs f attrs defS = do
+  m <- mapDyn (M.fromList . zip [(1::Int)..]) xs
+  opts <- mapDyn ((M.insert 0 defS) . M.map f) m
+  sel <- liftM _dropdown_value $ dropdown 0 opts $ def & attributes .~ attrs
+  combineDyn M.lookup sel m
 
