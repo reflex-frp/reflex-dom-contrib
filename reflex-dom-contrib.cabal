@@ -20,6 +20,7 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Utils
+    Reflex.Dom.Contrib.Widgets.CheckboxList
     Reflex.Dom.Contrib.Widgets.Common
 
   -- other-modules:       
