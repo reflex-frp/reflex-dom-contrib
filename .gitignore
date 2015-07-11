@@ -1,0 +1,17 @@
+dist
+log
+*.cfg
+*.swp
+*.o
+*.hi
+*.dyn_o
+*.dyn_hi
+*.p_o
+*.p_hi
+*~
+tags
+TAGS
+.cabal-sandbox
+.DS*
+cabal.sandbox.config
+*.jsmod
