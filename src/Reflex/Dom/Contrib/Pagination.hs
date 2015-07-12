@@ -27,7 +27,7 @@ import           Data.Word
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
-import           Reflex.Dom.Contrib.Utils
+import           Reflex.Dom.Contrib.Xhr
 ------------------------------------------------------------------------------
 
 
