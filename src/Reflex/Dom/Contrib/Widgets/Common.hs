@@ -13,6 +13,15 @@
 {-# LANGUAGE TypeFamilies              #-}
 {-# LANGUAGE UndecidableInstances      #-}
 
+{-|
+
+Infrastructure common to a wide variety of widgets.  WidgetConfig holds the
+core inputs needed by most widgets, while HtmlWidget holds the core Dynamics
+and Events returned by most widgets.  Encapsulating widget inputs and outputs
+this way makes it easier to compose and transform widgets.
+
+-}
+
 module Reflex.Dom.Contrib.Widgets.Common where
 
 ------------------------------------------------------------------------------
@@ -89,6 +98,8 @@ type GWidget t m a = WidgetConfig t a -> m (HtmlWidget t a)
 
 
 ------------------------------------------------------------------------------
+-- | HtmlWidget with a constant value that never fires any events and does not
+-- have focus.
 constWidget :: Reflex t => a -> HtmlWidget t a
 constWidget a = HtmlWidget (constDyn a) never never never never (constDyn False)
 

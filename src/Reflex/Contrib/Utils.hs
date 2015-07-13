@@ -30,6 +30,8 @@ attachDynSelf d = attach (current d) (updated d)
 
 
 ------------------------------------------------------------------------------
+-- | Partitions an event into a pair of events that fire when the predicate
+-- function evaluates to True and False respectively.
 partitionEvent
     :: Reflex t
     => (a -> Bool)
@@ -42,6 +44,9 @@ partitionEvent f e = ( fmapMaybe (\(b, x) -> if b then Just x else Nothing) e'
 
 
 ------------------------------------------------------------------------------
+-- | Sometimes you end up with a Dynamic t Foo where Foo contains an Event
+-- field.  This function collapses the two levels of Dynamic Event into just
+-- an Event.
 extractEvent
     :: (Reflex t, MonadHold t m)
     => (a -> Event t b)
@@ -51,6 +56,9 @@ extractEvent f = liftM (switch . current) . mapDyn f
 
 
 ------------------------------------------------------------------------------
+-- | Sometimes you end up with a Dynamic t Foo where Foo contains a Dynamic
+-- field.  This function collapses the two levels of Dynamic Dynamic into a
+-- single Dynamic.
 extractDyn
     :: (Reflex t, MonadHold t m)
     => (a -> Dynamic t b)

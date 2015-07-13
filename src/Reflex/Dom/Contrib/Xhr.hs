@@ -5,6 +5,12 @@
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
+{-|
+
+Convenience functions for dealing with XMLHttpRequest.
+
+-}
+
 module Reflex.Dom.Contrib.Xhr where
 
 ------------------------------------------------------------------------------

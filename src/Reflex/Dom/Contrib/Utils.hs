@@ -2,7 +2,20 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 
-module Reflex.Dom.Contrib.Utils where
+{-|
+
+Misc reflex-dom helper functions.
+
+-}
+
+module Reflex.Dom.Contrib.Utils
+  ( confirmEvent
+  , getWindowLocationPath
+  , windowHistoryPushState
+  , widgetHoldHelper
+  , putDebugLn
+  , putDebugLnE
+  ) where
 
 ------------------------------------------------------------------------------
 import           Control.Monad

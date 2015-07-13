@@ -2,7 +2,19 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 
-module Reflex.Dom.Contrib.KeyEvent where
+{-|
+
+API for dealing with keyboard events.
+
+-}
+
+module Reflex.Dom.Contrib.KeyEvent
+  ( KeyEvent(..)
+  , key
+  , shift
+  , ctrlKey
+  , Reflex.Dom.Contrib.KeyEvent.getKeyEvent
+  ) where
 
 ------------------------------------------------------------------------------
 import           Control.Monad.Reader
@@ -35,6 +47,7 @@ js_uiEventGetShiftKey = error "js_uiEventGetShiftKey only works in GHCJS."
 
 
 ------------------------------------------------------------------------------
+-- | Data structure with the details of key events.
 data KeyEvent = KeyEvent
    { keKeyCode :: Int
    , keCtrl :: Bool
@@ -43,6 +56,7 @@ data KeyEvent = KeyEvent
 
 
 ------------------------------------------------------------------------------
+-- | Convenience constructor for KeyEvent with no modifiers pressed.
 key :: Char -> KeyEvent
 key k = KeyEvent
    { keKeyCode = ord k
@@ -52,11 +66,13 @@ key k = KeyEvent
 
 
 ------------------------------------------------------------------------------
+-- | Set the shift modifier of a KeyEvent.
 shift :: KeyEvent -> KeyEvent
 shift ke = ke { keShift = True }
 
 
 ------------------------------------------------------------------------------
+-- | Set the ctrl modifier of a KeyEvent.
 ctrlKey :: Char -> KeyEvent
 ctrlKey k = (key $ toUpper k) { keCtrl = True }
 
