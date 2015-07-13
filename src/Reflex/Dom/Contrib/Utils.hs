@@ -5,21 +5,12 @@
 module Reflex.Dom.Contrib.Utils where
 
 ------------------------------------------------------------------------------
-import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Reader
-import           Data.Aeson
-import           Data.ByteString.Lazy (ByteString)
-import           Data.List
-import qualified Data.Map as M
-import           Data.Map (Map)
-import           Data.String.Conv
-import qualified Data.Text as T
 import           GHCJS.DOM.Types hiding (Event)
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
-import           Network.HTTP.Types.URI
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
