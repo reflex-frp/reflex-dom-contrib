@@ -66,3 +66,30 @@ extractDyn
     -> m (Dynamic t b)
 extractDyn f = liftM joinDyn . mapDyn f
 
+
+------------------------------------------------------------------------------
+-- | This function has the slight flaw that if (f initValue) == False, it will
+-- still get through.
+filterDyn
+    :: (MonadHold t m, Reflex t, Functor m)
+    => (a -> Bool)
+    -> Dynamic t a
+    -> m (Dynamic t a)
+filterDyn f d = fmap joinDyn $ holdDyn d $ fmap constDyn $
+    ffilter f (updated d)
+
+
+------------------------------------------------------------------------------
+-- | Similar to filterDyn, but here the initial value problem is visible
+-- because of the Maybe.
+fmapMaybeDyn
+    :: (MonadHold t m, Reflex t, Functor m)
+    => (a -> Maybe b)
+    -> Dynamic t a
+    -> m (Dynamic t (Maybe b))
+fmapMaybeDyn f d = do
+    d' <- mapDyn f d
+    fmap joinDyn $ holdDyn d' $ fmap (constDyn . Just) $
+      fmapMaybe f (updated d)
+
+
