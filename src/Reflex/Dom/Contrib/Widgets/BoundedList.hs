@@ -31,6 +31,7 @@ import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Interfaces
+import           Reflex.Contrib.Utils
 ------------------------------------------------------------------------------
 
 
@@ -109,18 +110,69 @@ boundedSelectList' updateEvent itemLimit curSelected
     
     counter <- count $ updated curSelected
     curItem <- combineDyn findCurItem items curSelected
-    let addCounter c (k,v) = (k, ((-c), v))
+    let addCounter c (k,v) = (k, ((-c), (k, v)))
         taggedInitial = M.fromList $ zipWith addCounter [1..] $
                           M.toList rmInitialItems
     let initMap = limitMap taggedInitial itemLimit
     activeItems <- foldDyn ($) initMap $
       boundedInsert itemLimit <$>
-      attachDyn counter (fmapMaybe id $ updated curItem)
+      attachDynWith (\c (k,v) -> (c, (k, (k,v))))
+        counter (fmapMaybe id $ updated curItem)
     selectViewListWithKey curSelected activeItems wrapSingle
   where
+    --wrapSingle :: k -> Dynamic t (BornAt, (k,v)) -> Dynamic t Bool -> m a
     wrapSingle k v b = do
-        v' <- mapDyn snd v
+        v' <- mapDyn (snd . snd) =<< filterDyn (\x -> fst (snd x) == k) v
         renderSingle k v' b
+
+
+------------------------------------------------------------------------------
+-- | Implements a common use of boundedSelectList' where only the currently
+-- selected item from a list is displayed.  In this case a Dynamic
+-- representing the current selection is used to drive insertions and they are
+-- never deleted externally.  Instead of returning a Map of all the item
+-- results, this function only returns the result for the item that is
+-- currently selected.
+boundedSelectList0
+    :: (MonadWidget t m, Show k, Ord k, Show v)
+    => Limit
+    -- ^ Maximum number of items to keep in the DOM at a time
+    -> Dynamic t a
+    -- ^ Currently selected item.  New items are added to the list when the
+    -- currently selected item changes and the new item is not already in the
+    -- list.
+    -> (a -> k)
+    -- ^ Gets the portion of a used as the key for the map of items
+    -> (a -> Maybe a)
+    -- ^ Decides whether to run expensiveGetNew in the case that the key is
+    -- already in the cache.
+    -> (Event t a -> m (Event t (k,v)))
+    -- ^ Gets a new key/value pair.  This function is run when curSelected
+    -- changes.
+    -> (k -> Dynamic t v -> Dynamic t Bool -> m b)
+    -- ^ Function to render a single item
+    -> m (Dynamic t (Map k b))
+boundedSelectList0 itemLimit curSelected getKey shouldRunExpensive
+                   expensiveGetNew renderSingle = do
+    pb <- getPostBuild
+    --e0 <- expensiveGetNew $ tagDyn curSelected pb
+    rec
+      let insertEvent = leftmost
+            [ fmapMaybe id $
+                attachDynWith isAlreadyPresent res (updated curSelected)
+            , tagDyn curSelected pb
+            ]
+      newVal <- expensiveGetNew insertEvent
+      let rm = ReflexMap mempty ((:[]) <$> newVal) never
+      curK <- mapDyn getKey curSelected
+      res :: Dynamic t (Map k b) <-
+        boundedSelectList' never itemLimit curK rm renderSingle
+    return res
+  where
+    isAlreadyPresent fieldListMap cur =
+        case M.lookup (getKey cur) fieldListMap of
+          Nothing -> Just cur
+          Just _ -> shouldRunExpensive cur
 
 
 ------------------------------------------------------------------------------
@@ -153,26 +205,14 @@ boundedSelectList
     -> m (Dynamic t b)
 boundedSelectList itemLimit curSelected getKey shouldRunExpensive
                   expensiveGetNew defaultVal renderSingle = do
-    pb <- getPostBuild
-    e0 <- expensiveGetNew $ tagDyn curSelected pb
-    rec
-      let insertEvent = fmapMaybe id $
-            attachDynWith isAlreadyPresent res (updated curSelected)
-      newVal <- expensiveGetNew insertEvent
-      let rm = ReflexMap mempty ((:[]) <$> leftmost [newVal, e0]) never
-      curK <- mapDyn getKey curSelected
-      res :: Dynamic t (Map k b) <-
-        boundedSelectList' never itemLimit curK rm renderSingle
+    res <- boundedSelectList0 itemLimit curSelected getKey shouldRunExpensive
+                              expensiveGetNew renderSingle
     combineDyn getCurrent curSelected res
   where
     getCurrent cur listMap =
         case M.lookup (getKey cur) listMap of
           Nothing -> defaultVal
           Just v -> v
-    isAlreadyPresent fieldListMap cur =
-        case M.lookup (getKey cur) fieldListMap of
-          Nothing -> Just cur
-          Just _ -> shouldRunExpensive cur
 
 
 ------------------------------------------------------------------------------
