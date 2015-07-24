@@ -70,6 +70,64 @@ instance HasSetValue (WidgetConfig t a) where
   setValue = widgetConfig_setValue
 
 
+class IsWidget w where
+  ----------------------------------------------------------------------------
+  -- | HtmlWidget with a constant value that never fires any events.
+  constWidget :: Reflex t => a -> w t a
+
+  ----------------------------------------------------------------------------
+  -- | We can't make a Functor instance for HtmlWidget until Dynamic gets a
+  -- Functor instance.  So until then, this will have to do.
+  mapWidget :: MonadWidget t m => (a -> b) -> w t a -> m (w t b)
+
+
+  combineWidgets :: MonadWidget t m => (a -> b -> c) -> w t a -> w t b -> m (w t c)
+
+  ----------------------------------------------------------------------------
+  -- | Combines multiple widgets over a Monoid operation.
+  wconcat :: (MonadWidget t m, Foldable f, Monoid a) => f (w t a) -> m (w t a)
+  wconcat = foldM (combineWidgets (<>)) (constWidget mempty)
+
+  ----------------------------------------------------------------------------
+  -- | Since widgets contain Dynamics and Events inside them, we can pull
+  -- Dynamic widgets out of the Dynamic.
+  extractWidget :: MonadWidget t m => Dynamic t (w t a) -> m (w t a)
+
+
+------------------------------------------------------------------------------
+-- | A general-purpose widget return value.
+data Widget0 t a = Widget0
+    { _widget0_value    :: Dynamic t a
+      -- ^ The authoritative value for this widget.
+    , _widget0_change   :: Event t a
+      -- ^ Event that fires when the widget changes internally (not via a
+      -- setValue event).
+    }
+
+makeLenses ''Widget0
+
+
+instance HasValue (Widget0 t a) where
+  type Value (Widget0 t a) = Dynamic t a
+  value = _widget0_value
+
+
+instance IsWidget Widget0 where
+  constWidget a = Widget0 (constDyn a) never
+  mapWidget f w = do
+    b <- mapDyn f $ value w
+    return $ Widget0 b (f <$> _widget0_change w)
+  combineWidgets f a b = do
+    c <- combineDyn f (value a) (value b)
+    let cChange = tag (current c) $ leftmost
+          [() <$ _widget0_change a, () <$ _widget0_change b]
+    return $ Widget0 c cChange
+  extractWidget dw = do
+    v <- extractDyn value dw
+    c <- extractEvent _widget0_change dw
+    return $ Widget0 v c
+
+
 ------------------------------------------------------------------------------
 -- | A general-purpose widget return value.
 data HtmlWidget t a = HtmlWidget
@@ -97,69 +155,29 @@ instance HasValue (HtmlWidget t a) where
 type GWidget t m a = WidgetConfig t a -> m (HtmlWidget t a)
 
 
-------------------------------------------------------------------------------
--- | HtmlWidget with a constant value that never fires any events and does not
--- have focus.
-constWidget :: Reflex t => a -> HtmlWidget t a
-constWidget a = HtmlWidget (constDyn a) never never never never (constDyn False)
-
-
-------------------------------------------------------------------------------
--- | We can't make a Functor instance for HtmlWidget until Dynamic gets a
--- Functor instance.  So until then, this will have to do.
-mapWidget
-    :: MonadWidget t m
-    => (a -> b)
-    -> HtmlWidget t a
-    -> m (HtmlWidget t b)
-mapWidget f w = do
-    newVal <- mapDyn f $ value w
-    return $ HtmlWidget
-      newVal
-      (f <$> _hwidget_change w)
-      (_hwidget_keypress w)
-      (_hwidget_keydown w)
-      (_hwidget_keyup w)
-      (_hwidget_hasFocus w)
-
-
-------------------------------------------------------------------------------
--- | Combine function does the expected thing for _value and _change and
--- applies leftmost to each of the widget events.
-combineWidgets
-    :: MonadWidget t m
-    => (a -> b -> c)
-    -> HtmlWidget t a
-    -> HtmlWidget t b
-    -> m (HtmlWidget t c)
-combineWidgets f a b = do
-    newVal <- combineDyn f (value a) (value b)
-    let newChange = tag (current newVal) $ leftmost
-          [() <$ _hwidget_change a, () <$ _hwidget_change b]
-    newFocus <- combineDyn (||) (_hwidget_hasFocus a) (_hwidget_hasFocus b)
-    return $ HtmlWidget
-      newVal newChange
-      (leftmost [_hwidget_keypress a, _hwidget_keypress b])
-      (leftmost [_hwidget_keydown a, _hwidget_keydown b])
-      (leftmost [_hwidget_keyup a, _hwidget_keyup b])
-      newFocus
-
-
-------------------------------------------------------------------------------
--- | Combines multiple widgets over a Monoid operation.
-wconcat
-    :: (MonadWidget t m, Foldable f, Monoid a)
-    => f (HtmlWidget t a) -> m (HtmlWidget t a)
-wconcat = foldM (combineWidgets (<>)) (constWidget mempty)
-
-
-------------------------------------------------------------------------------
--- | Convenience for extracting HtmlWidget from a Dynamic.
-extractWidget
-    :: MonadWidget t m
-    => Dynamic t (HtmlWidget t a)
-    -> m (HtmlWidget t a)
-extractWidget dynWidget = do
+instance IsWidget HtmlWidget where
+  constWidget a = HtmlWidget (constDyn a) never never never never (constDyn False)
+  mapWidget f w = do
+      newVal <- mapDyn f $ value w
+      return $ HtmlWidget
+        newVal
+        (f <$> _hwidget_change w)
+        (_hwidget_keypress w)
+        (_hwidget_keydown w)
+        (_hwidget_keyup w)
+        (_hwidget_hasFocus w)
+  combineWidgets f a b = do
+      newVal <- combineDyn f (value a) (value b)
+      let newChange = tag (current newVal) $ leftmost
+            [() <$ _hwidget_change a, () <$ _hwidget_change b]
+      newFocus <- combineDyn (||) (_hwidget_hasFocus a) (_hwidget_hasFocus b)
+      return $ HtmlWidget
+        newVal newChange
+        (leftmost [_hwidget_keypress a, _hwidget_keypress b])
+        (leftmost [_hwidget_keydown a, _hwidget_keydown b])
+        (leftmost [_hwidget_keyup a, _hwidget_keyup b])
+        newFocus
+  extractWidget dynWidget = do
     v <- extractDyn value dynWidget
     c <- extractEvent _hwidget_change dynWidget
     kp <- extractEvent _hwidget_keypress dynWidget
