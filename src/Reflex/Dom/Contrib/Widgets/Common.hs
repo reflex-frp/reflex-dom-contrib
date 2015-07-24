@@ -76,8 +76,7 @@ class IsWidget w where
   constWidget :: Reflex t => a -> w t a
 
   ----------------------------------------------------------------------------
-  -- | We can't make a Functor instance for HtmlWidget until Dynamic gets a
-  -- Functor instance.  So until then, this will have to do.
+  -- | We can't make a Functor instance until Dynamic gets a Functor instance.
   mapWidget :: MonadWidget t m => (a -> b) -> w t a -> m (w t b)
 
 
