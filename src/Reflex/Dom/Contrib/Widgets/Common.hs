@@ -43,6 +43,12 @@ import           Reflex.Contrib.Utils
 ------------------------------------------------------------------------------
 
 
+class HasChange a where
+  type Change a :: *
+  change :: a -> Change a
+
+
+
 ------------------------------------------------------------------------------
 -- | Generic config structure common to most widgets.  The attributes field
 -- may not be used for all widgets, but in that case it can just be ignored.
@@ -116,6 +122,11 @@ instance HasValue (Widget0 t a) where
   value = _widget0_value
 
 
+instance HasChange (Widget0 t a) where
+  type Change (Widget0 t a) = Event t a
+  change = _widget0_change
+
+
 instance IsWidget Widget0 where
   constWidget a = Widget0 (constDyn a) never
   mapWidget f w = do
@@ -152,6 +163,11 @@ makeLenses ''HtmlWidget
 instance HasValue (HtmlWidget t a) where
   type Value (HtmlWidget t a) = Dynamic t a
   value = _hwidget_value
+
+
+instance HasChange (HtmlWidget t a) where
+  type Change (HtmlWidget t a) = Event t a
+  change = _hwidget_change
 
 
 htmlTo0 :: HtmlWidget t a -> Widget0 t a
