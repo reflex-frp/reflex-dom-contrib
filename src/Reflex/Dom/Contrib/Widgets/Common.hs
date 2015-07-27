@@ -134,7 +134,7 @@ instance IsWidget Widget0 where
     return $ Widget0 b (f <$> _widget0_change w)
   combineWidgets f a b = do
     c <- combineDyn f (value a) (value b)
-    let cChange = tag (current c) $ leftmost
+    let cChange = tagDyn c $ leftmost
           [() <$ _widget0_change a, () <$ _widget0_change b]
     return $ Widget0 c cChange
   extractWidget dw = do
@@ -192,7 +192,7 @@ instance IsWidget HtmlWidget where
         (_hwidget_hasFocus w)
   combineWidgets f a b = do
       newVal <- combineDyn f (value a) (value b)
-      let newChange = tag (current newVal) $ leftmost
+      let newChange = tagDyn newVal $ leftmost
             [() <$ _hwidget_change a, () <$ _hwidget_change b]
       newFocus <- combineDyn (||) (_hwidget_hasFocus a) (_hwidget_hasFocus b)
       return $ HtmlWidget
@@ -341,6 +341,7 @@ intWidget :: (MonadWidget t m) => GWidget t m (Maybe Int)
 intWidget = readableWidget
 
 
+headMay :: [a] -> Maybe a
 headMay [] = Nothing
 headMay (x:_) = Just x
 
@@ -369,7 +370,7 @@ htmlDropdown items f payload cfg = do
                    ]
     d <- dropdown 0 dynItems $
            DropdownConfig setVal (_widgetConfig_attributes cfg)
-    val <- combineDyn (\k m -> payload $ fromJust $ M.lookup k m) (_dropdown_value d) m
+    val <- combineDyn (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
     return $ Widget0 val (tagDyn val $ _dropdown_change d)
 
 
