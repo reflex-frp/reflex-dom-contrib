@@ -29,6 +29,7 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
 ------------------------------------------------------------------------------
 import qualified Data.Map as M
 import           Data.Monoid
+import qualified Data.Set as S
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
@@ -37,7 +38,7 @@ import           Reflex.Dom.Contrib.Utils
 
 
 ------------------------------------------------------------------------------
-class Eq tab => Tab m tab where
+class (Eq tab, Ord tab) => Tab m tab where
     tabIndicator :: tab -> m ()
 
 
@@ -52,11 +53,13 @@ tabBar
     -- ^ Dynamic list of the displayed tabs
     -> Event t tab
     -- ^ Event updating the currently selected tab
+    -> Dynamic t (S.Set tab)
+    -- ^ Set containing tabs that are currently disabled
     -> m (Dynamic t tab)
-tabBar tabClass initialSelected initialTabs tabs curTab = do
+tabBar tabClass initialSelected initialTabs tabs curTab disabledTabs = do
     divClass "dyn-tab-bar" $ do
       elAttr "ul" ("class" =: tabClass) $ do
-        rec let tabFunc = mapM (mkTab currentTab)
+        rec let tabFunc = mapM (mkTab currentTab disabledTabs)
             foo <- widgetHoldHelper tabFunc initialTabs tabs
             let bar :: Event t tab = switch $ fmap leftmost $ current foo
             currentTab <- holdDyn initialSelected $ leftmost [bar, curTab]
@@ -67,12 +70,14 @@ tabBar tabClass initialSelected initialTabs tabs curTab = do
 mkTab
   :: (MonadWidget t m, Tab m tab)
   => Dynamic t tab
+  -> Dynamic t (S.Set tab)
   -> tab
   -> m (Event t tab)
-mkTab currentTab t = do
+mkTab currentTab disabledTabs t = do
     isSelected <- mapDyn (==t) currentTab
-    e <- activeHelper "li" (el "a" $ tabIndicator t) isSelected
-    return (t <$ e)
+    isDisabled <- mapDyn (S.member t) disabledTabs
+    e <- activeHelper "li" (el "a" $ tabIndicator t) isSelected isDisabled
+    return $ gate (not <$> current isDisabled) (t <$ e)
 
 
 ------------------------------------------------------------------------------
@@ -93,10 +98,18 @@ activeHelper
   => String
   -> m ()
   -> Dynamic t Bool
+  -- ^ Is selected
+  -> Dynamic t Bool
+  -- ^ Is disabled
   -> m (Event t ())
-activeHelper elName children isSelected = do
-    attrs <- forDyn isSelected $ \selected ->
-      if selected then "class" =: "active" else M.empty
+activeHelper elName children isSelected isDisabled = do
+    let mkAttrs selected disabled =
+          if disabled
+            then "class" =: "disabled"
+            else if selected
+                   then "class" =: "active"
+                   else M.empty
+    attrs <- combineDyn mkAttrs isSelected isDisabled
     (li, _) <- elDynAttr' elName attrs children
-    return $ _el_clicked li
+    return $ domEvent Click li
 
