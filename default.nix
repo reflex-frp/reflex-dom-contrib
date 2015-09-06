@@ -3,7 +3,7 @@
 , bifunctors
 , data-default
 , ghc
-, ghcjs-base
+, ghcjs-base ? null
 , ghcjs-dom
 , http-types
 , lens

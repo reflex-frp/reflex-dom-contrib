@@ -12,6 +12,7 @@ module Reflex.Dom.Contrib.Utils
   ( confirmEvent
   , getWindowLocationPath
   , windowHistoryPushState
+  , setWindowLoc
   , widgetHoldHelper
   , putDebugLn
   , putDebugLnE
@@ -21,71 +22,74 @@ module Reflex.Dom.Contrib.Utils
 import           Control.Monad
 import           Control.Monad.Reader
 import           GHCJS.DOM.Types hiding (Event)
+#ifdef ghcjs_HOST_OS
 import           GHCJS.Foreign
 import           GHCJS.Marshal
 import           GHCJS.Types
+#endif
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
-#ifdef ghcjs_HOST_OS
-
-foreign import javascript unsafe
-  "confirm($1)"
-  js_confirm :: JSString -> IO Bool
-
-foreign import javascript unsafe
-  "$1.location.pathname"
-  js_windowLocationPath :: JSRef DOMWindow ->  IO JSString
-
-foreign import javascript unsafe
-  "window.history.pushState({},\"\",$1)"
-  js_windowHistoryPushState :: JSString -> IO ()
-
-#else
-
-js_confirm :: JSString -> IO Bool
-js_confirm = error "js_confirm only works in GHCJS."
-
-js_windowLocationPath :: JSRef DOMWindow -> IO JSString
-js_windowLocationPath _ =
-    error "Window location can only be retrieved in GHCJS."
-
-js_windowHistoryPushState :: JSString -> IO ()
-js_windowHistoryPushState =
-    error "Window pushState can only be changed in GHCJS."
-
-#endif
-
-
-------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript confirmation dialog box
 -- when an event fires with a message to display.
 confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
+#ifdef ghcjs_HOST_OS
 confirmEvent str e = liftM (fmapMaybe id) $ performEvent (confirm <$> e)
   where
     confirm a = do
         ok <- liftIO $ js_confirm $ toJSString $ str a
         return $ if ok then Just a else Nothing
 
+foreign import javascript unsafe
+  "confirm($1)"
+  js_confirm :: JSString -> IO Bool
+#else
+confirmEvent = error "confirmEvent: can only be used with GHCJS"
+#endif
 
 ------------------------------------------------------------------------------
 -- | Gets the current path of the DOM Window (i.e., the contents of the
 -- address bar after the host, beginning with a "/").
 -- https://developer.mozilla.org/en-US/docs/Web/API/Location
 getWindowLocationPath :: DOMWindow -> IO String
+#ifdef ghcjs_HOST_OS
 getWindowLocationPath w = do
     jw <- toJSRef w
     liftM fromJSString $ js_windowLocationPath jw
 
+foreign import javascript unsafe
+  "$1.location.pathname"
+  js_windowLocationPath :: JSRef DOMWindow ->  IO JSString
+#else
+getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
+#endif
 
 ------------------------------------------------------------------------------
 -- | Pushes a new URL to the window history.
 windowHistoryPushState :: String -> IO ()
+#ifdef ghcjs_HOST_OS
 windowHistoryPushState = js_windowHistoryPushState . toJSString
 
+foreign import javascript unsafe
+  "window.history.pushState({},\"\",$1)"
+  js_windowHistoryPushState :: JSString -> IO ()
+#else
+windowHistoryPushState = error "windowHistoryPushState: can only be used with GHCJS"
+#endif
+
+setWindowLoc :: String -> IO ()
+#ifdef ghcjs_HOST_OS
+setWindowLoc = js_setWindowLoc . toJSString
+
+foreign import javascript unsafe
+  "window.location = window.location.origin + $1;"
+  js_setWindowLoc :: JSString -> IO ()
+#else
+setWindowLoc = error "setWindowLoc: can only be used with GHCJS"
+#endif
 
 ------------------------------------------------------------------------------
 -- | A common form for widgetHold calls that mirrors the pattern seen in hold

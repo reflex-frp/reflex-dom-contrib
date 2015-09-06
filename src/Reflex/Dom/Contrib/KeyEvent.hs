@@ -21,29 +21,11 @@ import           Control.Monad.Reader
 import           Data.Char
 import           GHCJS.DOM.EventM (event)
 import           GHCJS.DOM.Types hiding (Event)
+#ifdef ghcjs_HOST_OS
 import           GHCJS.Types
+#endif
 import           Reflex.Dom
 ------------------------------------------------------------------------------
-
-
-------------------------------------------------------------------------------
-#ifdef ghcjs_HOST_OS
-
-foreign import javascript unsafe "$1.ctrlKey"
-  js_uiEventGetCtrlKey :: JSRef UIEvent -> IO Bool
-
-foreign import javascript unsafe "$1.shiftKey"
-  js_uiEventGetShiftKey :: JSRef UIEvent -> IO Bool
-
-#else
-
-js_uiEventGetCtrlKey :: JSRef UIEvent -> IO Bool
-js_uiEventGetCtrlKey = error "js_uiEventGetCtrlKey only works in GHCJS."
-
-js_uiEventGetShiftKey :: JSRef UIEvent -> IO Bool
-js_uiEventGetShiftKey = error "js_uiEventGetShiftKey only works in GHCJS."
-
-#endif
 
 
 ------------------------------------------------------------------------------
@@ -79,6 +61,7 @@ ctrlKey k = (key $ toUpper k) { keCtrl = True }
 
 ------------------------------------------------------------------------------
 getKeyEvent :: ReaderT (t, UIEvent) IO KeyEvent
+#ifdef ghcjs_HOST_OS
 getKeyEvent = do
   e <- event
   code <- Reflex.Dom.getKeyEvent
@@ -86,4 +69,12 @@ getKeyEvent = do
                     <*> js_uiEventGetCtrlKey (unUIEvent e)
                     <*> js_uiEventGetShiftKey (unUIEvent e)
 
+foreign import javascript unsafe "$1.ctrlKey"
+  js_uiEventGetCtrlKey :: JSRef UIEvent -> IO Bool
+
+foreign import javascript unsafe "$1.shiftKey"
+  js_uiEventGetShiftKey :: JSRef UIEvent -> IO Bool
+#else
+getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
+#endif
 
