@@ -88,18 +88,18 @@ boundedInsert (Just lim) (c, (k, v)) m =
 -- used items if that size is exceeded.
 boundedSelectList'
     :: (MonadWidget t m, Show k, Ord k, Show v)
-    => Event t (Map k v -> Map k v)
-    -- ^ Event that updates individual item values
-    -> Limit
+    => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t k
     -- ^ Currently selected item
+    -> Event t (Map k v -> Map k v)
+    -- ^ Event that updates individual item values
     -> ReflexMap t k v
     -- ^ Interface for updating the list
     -> (k -> Dynamic t v -> Dynamic t Bool -> m a)
     -- ^ Function to render a single item
     -> m (Dynamic t (Map k a))
-boundedSelectList' updateEvent itemLimit curSelected
+boundedSelectList' itemLimit curSelected updateEvent
                   ReflexMap{..} renderSingle = do
     -- Map holding the full item list.
     items <- foldDyn ($) rmInitialItems $ leftmost
@@ -107,7 +107,7 @@ boundedSelectList' updateEvent itemLimit curSelected
       , rmDeleteFunc <$> rmDeleteItems
       , updateEvent
       ]
-    
+
     counter <- count $ updated curSelected
     curItem <- combineDyn findCurItem items curSelected
     let addCounter c (k,v) = (k, ((-c), (k, v)))
@@ -141,6 +141,7 @@ boundedSelectList0
     -- ^ Currently selected item.  New items are added to the list when the
     -- currently selected item changes and the new item is not already in the
     -- list.
+    -> Event t (Map k v -> Map k v)
     -> (a -> k)
     -- ^ Gets the portion of a used as the key for the map of items
     -> (a -> Maybe a)
@@ -152,10 +153,9 @@ boundedSelectList0
     -> (k -> Dynamic t v -> Dynamic t Bool -> m b)
     -- ^ Function to render a single item
     -> m (Dynamic t (Map k b))
-boundedSelectList0 itemLimit curSelected getKey shouldRunExpensive
+boundedSelectList0 itemLimit curSelected updateEvent getKey shouldRunExpensive
                    expensiveGetNew renderSingle = do
     pb <- getPostBuild
-    --e0 <- expensiveGetNew $ tagDyn curSelected pb
     rec
       let insertEvent = leftmost
             [ fmapMaybe id $
@@ -166,7 +166,7 @@ boundedSelectList0 itemLimit curSelected getKey shouldRunExpensive
       let rm = ReflexMap mempty ((:[]) <$> newVal) never
       curK <- mapDyn getKey curSelected
       res :: Dynamic t (Map k b) <-
-        boundedSelectList' never itemLimit curK rm renderSingle
+        boundedSelectList' itemLimit curK updateEvent rm renderSingle
     return res
   where
     isAlreadyPresent fieldListMap cur =
@@ -190,6 +190,7 @@ boundedSelectList
     -- ^ Currently selected item.  New items are added to the list when the
     -- currently selected item changes and the new item is not already in the
     -- list.
+    -> Event t (Map k v -> Map k v)
     -> (a -> k)
     -- ^ Gets the portion of a used as the key for the map of items
     -> (a -> Maybe a)
@@ -203,10 +204,10 @@ boundedSelectList
     -> (k -> Dynamic t v -> Dynamic t Bool -> m b)
     -- ^ Function to render a single item
     -> m (Dynamic t b)
-boundedSelectList itemLimit curSelected getKey shouldRunExpensive
+boundedSelectList itemLimit curSelected updateEvent getKey shouldRunExpensive
                   expensiveGetNew defaultVal renderSingle = do
-    res <- boundedSelectList0 itemLimit curSelected getKey shouldRunExpensive
-                              expensiveGetNew renderSingle
+    res <- boundedSelectList0 itemLimit curSelected updateEvent getKey
+                              shouldRunExpensive expensiveGetNew renderSingle
     combineDyn getCurrent curSelected res
   where
     getCurrent cur listMap =
