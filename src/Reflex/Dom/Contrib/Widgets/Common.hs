@@ -38,6 +38,7 @@ import           Data.Time
 import           GHCJS.DOM.HTMLInputElement
 import           Reflex
 import           Reflex.Dom
+import           Safe
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Utils
 ------------------------------------------------------------------------------
@@ -341,16 +342,9 @@ intWidget :: (MonadWidget t m) => GWidget t m (Maybe Int)
 intWidget = readableWidget
 
 
-headMay :: [a] -> Maybe a
-headMay [] = Nothing
-headMay (x:_) = Just x
-
-
 ------------------------------------------------------------------------------
 -- | Dropdown widget that takes a dynamic list of items and a function
--- generating a String representation of those items.  If you specify an
--- initial value of Nothing, then the initial value will be the first item in
--- the list.
+-- generating a String representation of those items.
 htmlDropdown
     :: (MonadWidget t m, Eq b)
     => Dynamic t [a]
@@ -371,6 +365,28 @@ htmlDropdown items f payload cfg = do
     d <- dropdown 0 dynItems $
            DropdownConfig setVal (_widgetConfig_attributes cfg)
     val <- combineDyn (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
+    return $ Widget0 val (tagDyn val $ _dropdown_change d)
+
+
+------------------------------------------------------------------------------
+-- | Dropdown widget that takes a list of items and a function generating a
+-- String representation of those items.
+htmlDropdownStatic
+    :: (MonadWidget t m, Eq b)
+    => [a]
+    -> (a -> String)
+    -> (a -> b)
+    -> WidgetConfig t b
+    -> m (Widget0 t b)
+htmlDropdownStatic items f payload cfg = do
+    let pairs = zip [(0::Int)..] items
+        m = M.fromList pairs
+        dynItems = M.map f m
+    let findIt a = maybe 0 fst $ headMay (filter (\ (_,x) -> payload x == a) pairs)
+    let setVal = findIt <$> _widgetConfig_setValue cfg
+    d <- dropdown (findIt $ _widgetConfig_initialValue cfg) (constDyn dynItems) $
+           DropdownConfig setVal (_widgetConfig_attributes cfg)
+    val <- mapDyn (\k -> payload $ fromJust $ M.lookup k m) (_dropdown_value d)
     return $ Widget0 val (tagDyn val $ _dropdown_change d)
 
 
