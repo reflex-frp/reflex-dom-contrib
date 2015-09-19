@@ -353,15 +353,11 @@ htmlDropdown
     -> WidgetConfig t b
     -> m (Widget0 t b)
 htmlDropdown items f payload cfg = do
-    pb <- getPostBuild
     pairs <- mapDyn (zip [(0::Int)..]) items
     m <- mapDyn M.fromList pairs
     dynItems <- mapDyn (M.map f) m
     let findIt ps a = maybe 0 fst $ headMay (filter (\ (_,x) -> payload x == a) ps)
-    let setVal = attachDynWith findIt pairs $
-          leftmost [ _widgetConfig_initialValue cfg <$ pb
-                   , _widgetConfig_setValue cfg
-                   ]
+    let setVal = attachDynWith findIt pairs $ _widgetConfig_setValue cfg
     d <- dropdown 0 dynItems $
            DropdownConfig setVal (_widgetConfig_attributes cfg)
     val <- combineDyn (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
