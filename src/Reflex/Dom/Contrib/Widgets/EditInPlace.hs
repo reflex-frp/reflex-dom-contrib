@@ -18,22 +18,14 @@ module Reflex.Dom.Contrib.Widgets.EditInPlace
 
 ------------------------------------------------------------------------------
 import           Control.Lens hiding ((.=))
-import           Control.Monad
 import           Control.Monad.Trans
 import           Data.Default
-import           Data.Function (on)
 import           Data.Map (Map)
-import qualified Data.Map as M
-import           Data.Monoid
-import           Data.String.Conv
-import qualified Data.Text as T
 import           GHCJS.DOM.Element
 import           Reflex
-import           Reflex.Contrib.Utils
 import           Reflex.Dom
 import           Reflex.Dom.Contrib.Utils
 import           Reflex.Dom.Contrib.Widgets.Common
-import           Text.Printf
 ------------------------------------------------------------------------------
 
 
@@ -59,7 +51,7 @@ editInPlace
     -- ^ The definitive value of the thing being edited
     -> m (Event t String)
     -- ^ Event that fires when the text is edited
-editInPlace active value = do
+editInPlace active val = do
     rec editState <- holdDyn Viewing $ leftmost
           [ fmapMaybe id $ attachWith
               (\c n -> if c == Editing then Nothing else Just n)
@@ -68,7 +60,7 @@ editInPlace active value = do
           ]
         cls <- mapDyn mkClass editState
         (e, sheetEdit) <- elDynAttr' "span" cls $ do
-          de <- widgetHoldHelper (chooser value) Viewing (updated editState)
+          de <- widgetHoldHelper (chooser val) Viewing (updated editState)
           return $ switch $ current de
         let selActive = tag active $ domEvent Click e
         let startEditing = fmapMaybe id $

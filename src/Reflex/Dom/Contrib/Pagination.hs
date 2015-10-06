@@ -110,7 +110,7 @@ instance ToJSON a => ToJSON (PaginationResults a) where
 -- Some convenient type aliases
 type PaginationCache k v = Map k [CacheVal v]
 type PaginationInput k = (k, PaginationQuery)
-type PaginationOutput k v = (k, CacheVal v)
+type PaginationOutput k v = (k, Maybe (CacheVal v))
 
 
 ------------------------------------------------------------------------------
@@ -151,14 +151,14 @@ paginatedQuery
   -> Event t (Map String ByteString, PaginationInput k)
   -- ^ Param map and pagination structure.  k is any additional information
   -- that you need to disambiguate multiple PaginationQuery entries.
-  -> m (Event t (PaginationResults a))
+  -> m (Event t (Maybe (PaginationResults a)))
 paginatedQuery pqp matchSearchString url input = do
     rec pcache <- foldDyn ($) mempty (addToCache pqp <$> r)
         let eme = attachWith (cachedQuery matchSearchString url)
                              (current pcache) input
         de <- widgetHold (return never) eme
         let r = switchPromptlyDyn $ de
-    return $ _pvValue . snd <$> r
+    return $ fmap _pvValue . snd <$> r
 
 
 ------------------------------------------------------------------------------
@@ -169,8 +169,8 @@ addToCache
     -> PaginationCache k (PaginationResults v)
     -> PaginationCache k (PaginationResults v)
 addToCache PQParams{..} (k, v) m =
-    if _pvShouldStore v
-      then M.insertWith (++) k [v] m2
+    if fmap _pvShouldStore v == Just True
+      then M.insertWith (++) k [fromJust v] m2
       else m
   where
     m2 = if M.size m > pqpMaxCacheSize then prune pqpPruneAmount m else m
@@ -209,7 +209,7 @@ cachedQuery matchSearchString url cache input = do
     pb <- getPostBuild
     let getData = do
           res <- getAndDecode (mkFullPath input <$ pb)
-          return $ (\v -> (k, CacheVal pq True $ fromMaybe err v)) <$> res
+          return $ (\v -> (k, CacheVal pq True <$> v)) <$> res
     case M.lookup k cache of
       Nothing -> getData
       Just pvs ->
@@ -219,9 +219,8 @@ cachedQuery matchSearchString url cache input = do
               let pv2 = pv & (pvValue . prResults) %~
                              filter (matchSearchString $ _pqSearchString pq)
                            & pvShouldStore .~ False
-              return $ (k,pv2) <$ pb
+              return $ (k,Just pv2) <$ pb
   where
-    err = error "Error decoding pagination results"
     mkFullPath p = url <> "?" <> queryString p
     queryString (ps, (_,pq)) = formEncode $
       M.insert "pagination" (encode pq) ps
