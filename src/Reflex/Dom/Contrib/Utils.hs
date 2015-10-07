@@ -61,7 +61,7 @@ getWindowLocationPath w = do
     liftM fromJSString $ js_windowLocationPath jw
 
 foreign import javascript unsafe
-  "$1.location.pathname"
+  "$1['location']['pathname']"
   js_windowLocationPath :: JSRef DOMWindow ->  IO JSString
 #else
 getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
@@ -74,7 +74,7 @@ windowHistoryPushState :: String -> IO ()
 windowHistoryPushState = js_windowHistoryPushState . toJSString
 
 foreign import javascript unsafe
-  "window.history.pushState({},\"\",$1)"
+  "window['history']['pushState']({},\"\",$1)"
   js_windowHistoryPushState :: JSString -> IO ()
 #else
 windowHistoryPushState = error "windowHistoryPushState: can only be used with GHCJS"
@@ -85,7 +85,7 @@ setWindowLoc :: String -> IO ()
 setWindowLoc = js_setWindowLoc . toJSString
 
 foreign import javascript unsafe
-  "window.location = window.location.origin + $1;"
+  "window.location = window['location']['origin'] + $1;"
   js_setWindowLoc :: JSString -> IO ()
 #else
 setWindowLoc = error "setWindowLoc: can only be used with GHCJS"

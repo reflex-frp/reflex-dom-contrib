@@ -69,10 +69,10 @@ getKeyEvent = do
                     <*> js_uiEventGetCtrlKey (unUIEvent e)
                     <*> js_uiEventGetShiftKey (unUIEvent e)
 
-foreign import javascript unsafe "$1.ctrlKey"
+foreign import javascript unsafe "$1['ctrlKey']"
   js_uiEventGetCtrlKey :: JSRef UIEvent -> IO Bool
 
-foreign import javascript unsafe "$1.shiftKey"
+foreign import javascript unsafe "$1['shiftKey']"
   js_uiEventGetShiftKey :: JSRef UIEvent -> IO Bool
 #else
 getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
