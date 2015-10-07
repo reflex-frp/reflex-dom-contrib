@@ -401,6 +401,24 @@ blurOrEnter w = tagDyn (_hwidget_value w) fireEvent
 
 
 ------------------------------------------------------------------------------
+-- | Allows you to restrict when a widget fires.  For instance,
+-- @restrictWidget blurOrEnter@ restricts a widget so it only fires on blur
+-- or when enter is pressed.
+restrictWidget
+    :: MonadWidget t m
+    => (HtmlWidget t a -> Event t a)
+    -> GWidget t m a
+    -> GWidget t m a
+restrictWidget restrictFunc wFunc cfg = do
+    w <- wFunc cfg
+    let e = restrictFunc w
+    v <- holdDyn (_widgetConfig_initialValue cfg) e
+    return $ w { _hwidget_value = v
+               , _hwidget_change = e
+               }
+
+
+------------------------------------------------------------------------------
 -- | Like readableWidget but only generates change events on blur or when
 -- enter is pressed.
 inputOnEnter
