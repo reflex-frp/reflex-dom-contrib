@@ -110,10 +110,13 @@ editor name = do
     def & widgetConfig_setValue .~ tagDyn name pb
   performEvent_ $ ffor pb $ \_ -> do
     liftIO $ elementFocus e
+  let acceptEvent = leftmost
+        [ () <$ ffilter (==13) (_hwidget_keypress w)
+        , () <$ ffilter not (updated $ _hwidget_hasFocus w)
+        ]
   return $ leftmost
-    [ NameChange <$> (tag (current $ value w) $ ffilter (==13) $ _hwidget_keypress w)
+    [ NameChange <$> tag (current $ value w) acceptEvent
     , EditClose <$ ffilter (==27) (_hwidget_keydown w)
-    , EditClose <$ ffilter not (updated $ _hwidget_hasFocus w)
     ]
 
 
