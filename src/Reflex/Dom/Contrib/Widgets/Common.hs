@@ -344,24 +344,17 @@ intWidget = readableWidget
 
 
 ------------------------------------------------------------------------------
--- | Dropdown widget that takes a dynamic list of items and a function
--- generating a String representation of those items.
-htmlDropdown
-    :: (MonadWidget t m, Eq b)
-    => [a]
-    -> Event t [a]
-    -> (a -> String)
-    -> (a -> b)
-    -> WidgetConfig t b
-    -> m (Widget0 t (Maybe b))
-htmlDropdown initItems items f payload cfg = do
-    let go is = htmlDropdownStatic is f (Just . payload) (Just <$> cfg)
-    extractWidget =<< widgetHold (go initItems) (go <$> items)
-
-
-------------------------------------------------------------------------------
 -- | Dropdown widget that takes a list of items and a function generating a
 -- String representation of those items.
+--
+-- This widget doesn't require your data type to have Read and Show instances
+-- like reflex-dom's dropdown function.  It does this by using Int indices
+-- into your static list of items in the actual rendered dropdown element.
+--
+-- But this comes with a price--it has unexpected behavior under insertions,
+-- deletions, and reorderings of the list of options.  Because of this, you
+-- should probably only use this for static dropdowns where the list of
+-- options never changes.
 htmlDropdownStatic
     :: (MonadWidget t m, Eq b)
     => [a]
