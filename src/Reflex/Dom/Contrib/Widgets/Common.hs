@@ -344,6 +344,28 @@ intWidget = readableWidget
 
 
 ------------------------------------------------------------------------------
+-- | Dropdown widget that takes a dynamic list of items and a function
+-- generating a String representation of those items.
+htmlDropdown
+    :: (MonadWidget t m, Eq b)
+    => Dynamic t [a]
+    -> (a -> String)
+    -> (a -> b)
+    -> WidgetConfig t b
+    -> m (Widget0 t b)
+htmlDropdown items f payload cfg = do
+    pairs <- mapDyn (zip [(0::Int)..]) items
+    m <- mapDyn M.fromList pairs
+    dynItems <- mapDyn (M.map f) m
+    let findIt ps a = maybe 0 fst $ headMay (filter (\ (_,x) -> payload x == a) ps)
+    let setVal = attachDynWith findIt pairs $ _widgetConfig_setValue cfg
+    d <- dropdown 0 dynItems $
+           DropdownConfig setVal (_widgetConfig_attributes cfg)
+    val <- combineDyn (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
+    return $ Widget0 val (tagDyn val $ _dropdown_change d)
+
+
+------------------------------------------------------------------------------
 -- | Dropdown widget that takes a list of items and a function generating a
 -- String representation of those items.
 --
