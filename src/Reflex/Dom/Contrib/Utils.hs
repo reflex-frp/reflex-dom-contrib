@@ -49,6 +49,7 @@ foreign import javascript unsafe
   js_alert :: JSString -> IO ()
 #else
 alertEvent = error "alertEvent: can only be used with GHCJS"
+js_alert = error "js_alert: can only be used with GHCJS"
 #endif
 
 ------------------------------------------------------------------------------
@@ -67,6 +68,7 @@ foreign import javascript unsafe
   js_confirm :: JSString -> IO Bool
 #else
 confirmEvent = error "confirmEvent: can only be used with GHCJS"
+js_confirm = error "js_confirm: can only be used with GHCJS"
 #endif
 
 ------------------------------------------------------------------------------
