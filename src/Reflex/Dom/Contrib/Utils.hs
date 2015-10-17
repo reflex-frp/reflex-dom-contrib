@@ -9,7 +9,10 @@ Misc reflex-dom helper functions.
 -}
 
 module Reflex.Dom.Contrib.Utils
-  ( confirmEvent
+  ( alertEvent
+  , js_alert
+  , confirmEvent
+  , js_confirm
   , getWindowLocationPath
   , windowHistoryPushState
   , setWindowLoc
@@ -31,6 +34,22 @@ import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 
+
+------------------------------------------------------------------------------
+-- | Convenient function that pops up a javascript alert dialog box when an
+-- event fires with a message to display.
+alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
+#ifdef ghcjs_HOST_OS
+alertEvent str e = performEvent_ (alert <$> e)
+  where
+    alert a = liftIO $ js_alert $ toJSString $ str a
+
+foreign import javascript unsafe
+  "alert($1)"
+  js_alert :: JSString -> IO ()
+#else
+alertEvent = error "alertEvent: can only be used with GHCJS"
+#endif
 
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript confirmation dialog box
