@@ -51,6 +51,7 @@ library
     http-types   >= 0.8  && < 0.9,
     lens         >= 4.9  && < 4.13,
     mtl          >= 2.0  && < 2.3,
+    random       >= 1.0  && < 1.2,
     readable     >= 0.3  && < 0.4,
     reflex       >= 0.2  && < 0.4,
     reflex-dom   >= 0.1  && < 0.3,
