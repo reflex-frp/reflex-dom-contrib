@@ -24,7 +24,6 @@ this way makes it easier to compose and transform widgets.
 
 module Reflex.Dom.Contrib.Widgets.Common where
 
-import Debug.Trace
 ------------------------------------------------------------------------------
 import           Control.Lens
 import           Control.Monad

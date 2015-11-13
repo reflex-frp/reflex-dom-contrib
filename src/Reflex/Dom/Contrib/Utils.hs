@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
+{-# LANGUAGE RankNTypes               #-}
 
 {-|
 
@@ -19,11 +20,13 @@ module Reflex.Dom.Contrib.Utils
   , widgetHoldHelper
   , putDebugLn
   , putDebugLnE
+  , selectViewListWithKey
   ) where
 
 ------------------------------------------------------------------------------
 import           Control.Monad
 import           Control.Monad.Reader
+import           Data.Map               (Map)
 import           GHCJS.DOM.Types hiding (Event)
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Foreign
@@ -138,4 +141,19 @@ putDebugLn str = do
 putDebugLnE :: MonadWidget t m => Event t a -> (a -> String) -> m ()
 putDebugLnE e mkStr = do
     performEvent_ (liftIO . putStrLn . mkStr <$> e)
+
+
+------------------------------------------------------------------------------
+-- | A generalized version of the one in reflex-dom.
+selectViewListWithKey
+    :: forall t m k v a. (MonadWidget t m, Ord k)
+    => Dynamic t k
+    -> Dynamic t (Map k v)
+    -> (k -> Dynamic t v -> Dynamic t Bool -> m a)
+    -> m (Dynamic t (Map k a))
+selectViewListWithKey selection vals mkChild = do
+  let selectionDemux = demux selection
+  listWithKey vals $ \k v -> do
+    selected <- getDemuxed selectionDemux k
+    mkChild k v selected
 

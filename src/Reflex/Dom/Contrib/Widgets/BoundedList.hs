@@ -32,6 +32,7 @@ import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Interfaces
 import           Reflex.Contrib.Utils
+import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 
 

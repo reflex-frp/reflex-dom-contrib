@@ -4,7 +4,6 @@
 {-# LANGUAGE MultiWayIf                #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
-{-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE RecursiveDo               #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
@@ -18,16 +17,15 @@ module Reflex.Contrib.Interfaces
   , rlist2rmap
   , toReflexMap
   , rmDeleteFunc
-  , selectViewListWithKey
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Monad.Fix
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Set (Set)
 import qualified Data.Set as S
 import           Reflex
-import           Reflex.Dom
 ------------------------------------------------------------------------------
 
 
@@ -74,7 +72,7 @@ data ReflexMap t k v = ReflexMap
 ------------------------------------------------------------------------------
 -- | Converts a ReflexList to a Dynamic list.
 toReflexMap
-    :: (MonadWidget t m, Eq a)
+    :: (Reflex t, MonadFix m, MonadHold t m, Eq a)
     => ReflexList t a
     -> (ReflexMap t Int a -> m (Dynamic t (Map Int a)))
     -> m (Dynamic t [a])
@@ -89,21 +87,5 @@ toReflexMap rlist f = do
 -- a map.
 rmDeleteFunc :: Ord k => Set k -> Map k v -> Map k v
 rmDeleteFunc s m = foldr M.delete m (S.toList s)
-
-
-------------------------------------------------------------------------------
--- | A generalized version of the one in reflex-dom.
-selectViewListWithKey
-    :: forall t m k v a. (MonadWidget t m, Ord k)
-    => Dynamic t k
-    -> Dynamic t (Map k v)
-    -> (k -> Dynamic t v -> Dynamic t Bool -> m a)
-    -> m (Dynamic t (Map k a))
-selectViewListWithKey selection vals mkChild = do
-  let selectionDemux = demux selection
-  listWithKey vals $ \k v -> do
-    selected <- getDemuxed selectionDemux k
-    mkChild k v selected
-
 
 
