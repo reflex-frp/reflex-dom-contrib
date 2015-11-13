@@ -1,5 +1,5 @@
 name:                reflex-dom-contrib
-version:             0.1
+version:             0.2
 synopsis:            A playground for experimenting with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
@@ -32,6 +32,7 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
+    Reflex.Dom.Contrib.Time
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
@@ -39,25 +40,28 @@ library
     Reflex.Dom.Contrib.Widgets.Common
     Reflex.Dom.Contrib.Widgets.DynTabs
     Reflex.Dom.Contrib.Widgets.EditInPlace
+    Reflex.Dom.Contrib.Widgets.Svg
 
   build-depends:
-    aeson        >= 0.8  && < 0.10,
+    aeson        >= 0.8  && < 0.11,
     base         >= 4.6  && < 4.9,
     bifunctors   >= 4.0  && < 5.1,
     bytestring   >= 0.10 && < 0.11,
     containers   >= 0.5  && < 0.6,
     data-default >= 0.5  && < 0.6,
     ghcjs-dom    >= 0.1  && < 0.2,
-    http-types   >= 0.8  && < 0.9,
-    lens         >= 4.9  && < 4.13,
+    http-types   >= 0.8  && < 0.10,
+    lens         >= 4.9  && < 4.14,
     mtl          >= 2.0  && < 2.3,
+    random       >= 1.0  && < 1.2,
     readable     >= 0.3  && < 0.4,
     reflex       >= 0.2  && < 0.4,
-    reflex-dom   >= 0.1  && < 0.3,
+    reflex-dom   >= 0.2  && < 0.3,
     safe         >= 0.3  && < 0.4,
     string-conv  >= 0.1  && < 0.2,
     text         >= 1.2  && < 1.3,
-    time         >= 1.5  && < 1.6
+    time         >= 1.5  && < 1.6,
+    transformers >= 0.4  && < 0.5
 
   if impl(ghcjs)
     build-depends:

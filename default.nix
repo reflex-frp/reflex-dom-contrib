@@ -8,6 +8,7 @@
 , http-types
 , lens
 , mtl
+, random
 , readable
 , reflex
 , reflex-dom
@@ -34,6 +35,7 @@ mkDerivation {
     http-types
     lens
     mtl
+    random
     readable
     reflex
     reflex-dom
