@@ -28,7 +28,7 @@ import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Monoid
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom hiding (selectViewListWithKey)
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Interfaces
 import           Reflex.Contrib.Utils
