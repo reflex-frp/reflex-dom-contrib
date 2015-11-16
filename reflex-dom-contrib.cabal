@@ -1,5 +1,5 @@
 name:                reflex-dom-contrib
-version:             0.2
+version:             0.3
 synopsis:            A playground for experimenting with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget

@@ -119,7 +119,7 @@ boundedSelectList' itemLimit curSelected updateEvent
       boundedInsert itemLimit <$>
       attachDynWith (\c (k,v) -> (c, (k, (k,v))))
         counter (fmapMaybe id $ updated curItem)
-    selectViewListWithKey curSelected activeItems wrapSingle
+    listWithKeyAndSelection curSelected activeItems wrapSingle
   where
     --wrapSingle :: k -> Dynamic t (BornAt, (k,v)) -> Dynamic t Bool -> m a
     wrapSingle k v b = do

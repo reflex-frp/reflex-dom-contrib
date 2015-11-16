@@ -20,7 +20,7 @@ module Reflex.Dom.Contrib.Utils
   , widgetHoldHelper
   , putDebugLn
   , putDebugLnE
-  , selectViewListWithKey
+  , listWithKeyAndSelection
   ) where
 
 ------------------------------------------------------------------------------
@@ -145,13 +145,13 @@ putDebugLnE e mkStr = do
 
 ------------------------------------------------------------------------------
 -- | A generalized version of the one in reflex-dom.
-selectViewListWithKey
+listWithKeyAndSelection
     :: forall t m k v a. (MonadWidget t m, Ord k)
     => Dynamic t k
     -> Dynamic t (Map k v)
     -> (k -> Dynamic t v -> Dynamic t Bool -> m a)
     -> m (Dynamic t (Map k a))
-selectViewListWithKey selection vals mkChild = do
+listWithKeyAndSelection selection vals mkChild = do
   let selectionDemux = demux selection
   listWithKey vals $ \k v -> do
     selected <- getDemuxed selectionDemux k
