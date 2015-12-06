@@ -35,7 +35,7 @@ import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
 import           Data.Time
-import           GHCJS.DOM.HTMLInputElement
+import           GHCJS.DOM.HTMLInputElement hiding (setValue)
 import           Reflex
 import           Reflex.Dom
 import           Safe

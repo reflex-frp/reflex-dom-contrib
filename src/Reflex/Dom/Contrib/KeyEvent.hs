@@ -19,7 +19,7 @@ module Reflex.Dom.Contrib.KeyEvent
 ------------------------------------------------------------------------------
 import           Control.Monad.Reader
 import           Data.Char
-import           GHCJS.DOM.EventM (event)
+import           GHCJS.DOM.EventM (event, EventM)
 import           GHCJS.DOM.Types hiding (Event)
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Types
@@ -60,20 +60,20 @@ ctrlKey k = (key $ toUpper k) { keCtrl = True }
 
 
 ------------------------------------------------------------------------------
-getKeyEvent :: ReaderT (t, UIEvent) IO KeyEvent
+getKeyEvent :: EventM e KeyboardEvent KeyEvent
 #ifdef ghcjs_HOST_OS
 getKeyEvent = do
   e <- event
   code <- Reflex.Dom.getKeyEvent
   liftIO $ KeyEvent <$> pure code
-                    <*> js_uiEventGetCtrlKey (unUIEvent e)
-                    <*> js_uiEventGetShiftKey (unUIEvent e)
+                    <*> js_uiEventGetCtrlKey (unKeyboardEvent e)
+                    <*> js_uiEventGetShiftKey (unKeyboardEvent e)
 
 foreign import javascript unsafe "$1['ctrlKey']"
-  js_uiEventGetCtrlKey :: JSRef UIEvent -> IO Bool
+  js_uiEventGetCtrlKey :: JSRef KeyboardEvent -> IO Bool
 
 foreign import javascript unsafe "$1['shiftKey']"
-  js_uiEventGetShiftKey :: JSRef UIEvent -> IO Bool
+  js_uiEventGetShiftKey :: JSRef KeyboardEvent -> IO Bool
 #else
 getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
 #endif
