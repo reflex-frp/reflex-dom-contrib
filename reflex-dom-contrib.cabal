@@ -36,6 +36,7 @@ library
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
+    Reflex.Dom.Contrib.Widgets.ButtonGroup
     Reflex.Dom.Contrib.Widgets.CheckboxList
     Reflex.Dom.Contrib.Widgets.Common
     Reflex.Dom.Contrib.Widgets.DynTabs
