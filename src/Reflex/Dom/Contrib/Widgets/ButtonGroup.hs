@@ -6,6 +6,7 @@
 
 module Reflex.Dom.Contrib.Widgets.ButtonGroup where
 
+import Data.Foldable
 import Data.Traversable
 import Data.Bool
 import qualified Data.Map as Map
@@ -18,8 +19,7 @@ import Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------
 buttonGroup
   :: forall t m a.(MonadWidget t m, Eq a, Show a)
-  => (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t ()))
---  => (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
+  => (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
   -> Dynamic t (Map.Map Int a)
   -> GWidget t m (Maybe a)
 buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) =
@@ -35,22 +35,35 @@ buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) =
                                  (current dynButtons)
                                  internSet
 
-    -- dynFocusMap :: Map.Map Int (Dynamic t Bool) <- forDyn dynButtons $ \btnMap -> do
-    --   focusMap <- flip traverse (Map.toList btnMap) $ \(k,btnFocus) -> constDyn False
-    --   return focusMap
+    dynDynFocusMap  <- forDyn dynButtons $ \btnMap -> for btnMap $ \btn -> do
+      (_,isFocused) <- drawDynBtn
+      -- flip traverse btnMap $ \(_,f) -> _
+
+    dynFocusMap <- joinDynThroughMap dynDynFocusMap
+    dynAnyFocus :: Dynamic t Bool <- forDyn dynFocusMap $ \focusMap -> any id focusMap
 
     dynK <- holdDyn Nothing $ leftmost [internSet, externSet]
 
     dynButtons'  <- mapDyn (Map.mapKeys Just) dynButtons
 
-    clickSelEvents <- selectViewListWithKey_ dynK dynButtons' drawDynBtn
---                       (fmap id drawDynBtn)
+    clickSelEvents <- selectViewListWithKey_ dynK dynButtons'
+                      (\k v b -> drawDynBtn k v b >>= \(e,_) -> return e)
 
     dynSelV <- combineDyn (\k m -> k >>= flip Map.lookup m) dynK dynButtons
 
     --      HTMLWidget _hwidget_value _hwidget_change _hwidget_keypress _hwidget_keydown _hwidget_keyup _hwidget_hasfocus
-    return (HtmlWidget dynSelV internalV never never never (constDyn False))
+    return (HtmlWidget dynSelV internalV never never never dynAnyFocus)
 
+
+-- selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k) => Dynamic t k -> Dynamic t (Map k v) -> (k -> Dynamic t v -> Dynamic t Bool -> m (Event t a)) -> m (Event t k, Dynamic t Bool)
+-- selectViewListWithKey_' selection vals mkChild = do
+--   let selectionDemux = demux selection -- For good performance, this value must be shared across all children
+--   selectChild <- listWithKey vals $ \k v -> do
+--     selected <- getDemuxed selectionDemux k
+--     selectSelf <- mkChild k v selected
+--     return $ fmap (const k) selectSelf
+--   selEvents <- liftM switchPromptlyDyn $ mapDyn (leftmost . Map.elems) selectChild
+--   return (selEvents, constDyn False)
 
 ------------------------------------------------------------------------------
 revLookup :: Eq a => Map.Map Int a -> Maybe a -> Maybe Int
@@ -86,7 +99,9 @@ bootstrapButtonGroup dynEntryList cfg = do
            "type"  =: "button"
         <> "class" =: ("btn btn-default" <> bool "" " active" b)
       (b,_) <- elDynAttr' "button" btnAttrs $ dynText txt
-      return (Click `domEvent` b)
+      f     <- holdDyn False $ leftmost [ False <$ (Blur `domEvent`  b)
+                                        , True  <$ (Focus `domEvent` b)]
+      return (Click `domEvent` b, f)
 
 
 
