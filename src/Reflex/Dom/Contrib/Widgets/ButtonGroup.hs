@@ -88,35 +88,25 @@ bootstrapButtonGroup dynEntryList cfg = do
           <> "role"       =: "group"
           <> "aria-label" =: "..."
 
-  groupWidget :: HtmlWidget t (Maybe a) <- 
-    buttonGroup' handleOne btns
-                                (WidgetConfig {_widgetConfig_attributes = divAttrs
-                                              ,_widgetConfig_setValue   = _widgetConfig_setValue cfg -- externalSets
-                                              ,_widgetConfig_initialValue = _widgetConfig_initialValue cfg }) -- revLookup' entryList (_widgetConfig_initialValue cfg)})
+  buttonGroup' handleOne btns
+    (WidgetConfig {_widgetConfig_attributes = divAttrs
+                  ,_widgetConfig_setValue   = _widgetConfig_setValue cfg
+                  ,_widgetConfig_initialValue = _widgetConfig_initialValue cfg
+                  })
 
   return groupWidget
-
-  -- groupWidget <- buttonGroup' handleOne btns (WidgetConfig {_widgetConfig_attributes = divAttrs
-  --                                                          ,_widgetConfig_setValue   = _widgetConfig_setVal cfg
-  --                                                          ,_widgetConfig_initialValue = _widgetConfig_initialValue cfg})
-  -- let x = groupWidget :: HtmlWidget t (Maybe a)
-  -- return groupWidget
-
-  -- mapWidget m groupWidget
 
   where
     handleOne i dynV dynChecked = do
       txt :: Dynamic t (Maybe String) <- combineDyn (\v m -> Prelude.lookup v m) dynV dynEntryList
       txt' :: Dynamic t String <- mapDyn (fromMaybe "") txt
-      btnAttrs <- combineDyn btnAttrs dynV dynChecked
+      btnAttrs <- forDyn dynChecked $ \b ->
+           "type" =: "button"
+        <> "class" =: ("btn btn-default" <> bool "" " active" checked)
       (b,_) <- elDynAttr' "button" btnAttrs $ (dynText txt')
       return (Click `domEvent` b)
 
-    btnAttrs (val) checked = "type" =: "button"
-                               <> "class" =: ("btn btn-default" <> bool "" " active" checked)
 
-    m Nothing      = Nothing
-    m (Just (k,v)) = Just v
 
 ------------------------------------------------------------------------------
 -- radioGroup :: forall t m a.MonadWidget t m
