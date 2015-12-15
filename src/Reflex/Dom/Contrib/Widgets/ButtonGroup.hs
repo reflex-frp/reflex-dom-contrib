@@ -6,6 +6,7 @@
 
 module Reflex.Dom.Contrib.Widgets.ButtonGroup where
 
+import Control.Monad
 import Data.Foldable
 import Data.Traversable
 import Data.Bool
@@ -35,35 +36,38 @@ buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) =
                                  (current dynButtons)
                                  internSet
 
-    dynDynFocusMap  <- forDyn dynButtons $ \btnMap -> for btnMap $ \btn -> do
-      (_,isFocused) <- drawDynBtn
-      -- flip traverse btnMap $ \(_,f) -> _
-
-    dynFocusMap <- joinDynThroughMap dynDynFocusMap
-    dynAnyFocus :: Dynamic t Bool <- forDyn dynFocusMap $ \focusMap -> any id focusMap
-
     dynK <- holdDyn Nothing $ leftmost [internSet, externSet]
 
     dynButtons'  <- mapDyn (Map.mapKeys Just) dynButtons
 
-    clickSelEvents <- selectViewListWithKey_ dynK dynButtons'
-                      (\k v b -> drawDynBtn k v b >>= \(e,_) -> return e)
+    (clickSelEvents, hasFocus) <- selectViewListWithKey_' dynK dynButtons' drawDynBtn
 
     dynSelV <- combineDyn (\k m -> k >>= flip Map.lookup m) dynK dynButtons
 
     --      HTMLWidget _hwidget_value _hwidget_change _hwidget_keypress _hwidget_keydown _hwidget_keyup _hwidget_hasfocus
-    return (HtmlWidget dynSelV internalV never never never dynAnyFocus)
+    return (HtmlWidget dynSelV internalV never never never hasFocus)
 
 
--- selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k) => Dynamic t k -> Dynamic t (Map k v) -> (k -> Dynamic t v -> Dynamic t Bool -> m (Event t a)) -> m (Event t k, Dynamic t Bool)
--- selectViewListWithKey_' selection vals mkChild = do
---   let selectionDemux = demux selection -- For good performance, this value must be shared across all children
---   selectChild <- listWithKey vals $ \k v -> do
---     selected <- getDemuxed selectionDemux k
---     selectSelf <- mkChild k v selected
---     return $ fmap (const k) selectSelf
---   selEvents <- liftM switchPromptlyDyn $ mapDyn (leftmost . Map.elems) selectChild
---   return (selEvents, constDyn False)
+selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k)
+                        => Dynamic t k
+                        -> Dynamic t (Map.Map k v)
+                        -> (k -> Dynamic t v -> Dynamic t Bool -> m (Event t a, Dynamic t Bool))
+                        -> m (Event t k, Dynamic t Bool)
+selectViewListWithKey_' selection vals mkChild = do
+  let selectionDemux = demux selection -- For good performance, this value must be shared across all children
+
+  selectChildAndFocus :: Dynamic t (Map.Map k (Event t k, Dynamic t Bool)) <- listWithKey vals $ \k v -> do
+    selected <- getDemuxed selectionDemux k
+    (selectSelf, selfFocus) <- mkChild k v selected
+    return $ (fmap (const k) selectSelf, selfFocus)
+
+  selectChild :: Dynamic t (Map.Map k (Event t k)) <- mapDyn (Map.map fst) selectChildAndFocus
+  selEvents <- liftM switchPromptlyDyn $ mapDyn (leftmost . Map.elems) selectChild
+  focusMap :: Dynamic t (Map.Map k Bool) <- joinDynThroughMap <$> mapDyn (Map.map snd) selectChildAndFocus
+  dynFocused :: Dynamic t Bool <- forDyn focusMap $ \fm -> any id fm
+
+  return (selEvents, dynFocused)
+
 
 ------------------------------------------------------------------------------
 revLookup :: Eq a => Map.Map Int a -> Maybe a -> Maybe Int
