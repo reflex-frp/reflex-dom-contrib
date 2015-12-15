@@ -23,9 +23,9 @@ buttonGroup
   => (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
   -> Dynamic t (Map.Map Int a)
   -> GWidget t m (Maybe a)
-buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) =
+buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) = do
 
-  elDynAttr "div" wcAttrs $ mdo
+  (parent, child) <- elDynAttr' "div" wcAttrs $ mdo
 
     pb <- getPostBuild
 
@@ -46,6 +46,13 @@ buttonGroup drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) =
 
     --      HTMLWidget _hwidget_value _hwidget_change _hwidget_keypress _hwidget_keydown _hwidget_keyup _hwidget_hasfocus
     return (HtmlWidget dynSelV internalV never never never hasFocus)
+
+  let keyp = Keypress `domEvent` parent
+      keyu = Keyup    `domEvent` parent
+      keyd = Keydown  `domEvent` parent
+  return $ child { _hwidget_keypress = keyp
+                 , _hwidget_keyup    = keyu
+                 , _hwidget_keydown  = keyd }
 
 
 selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k)
