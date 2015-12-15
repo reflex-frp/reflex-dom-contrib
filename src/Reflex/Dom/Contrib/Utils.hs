@@ -78,15 +78,14 @@ js_confirm = error "js_confirm: can only be used with GHCJS"
 -- | Gets the current path of the DOM Window (i.e., the contents of the
 -- address bar after the host, beginning with a "/").
 -- https://developer.mozilla.org/en-US/docs/Web/API/Location
-getWindowLocationPath :: DOMWindow -> IO String
+getWindowLocationPath :: Window -> IO String
 #ifdef ghcjs_HOST_OS
 getWindowLocationPath w = do
-    jw <- toJSRef w
-    liftM fromJSString $ js_windowLocationPath jw
+    liftM fromJSString $ js_windowLocationPath $ unWindow w
 
 foreign import javascript unsafe
   "$1['location']['pathname']"
-  js_windowLocationPath :: JSRef DOMWindow ->  IO JSString
+  js_windowLocationPath :: JSRef Window ->  IO JSString
 #else
 getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
 #endif
