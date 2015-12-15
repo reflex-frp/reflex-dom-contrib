@@ -14,8 +14,10 @@ import Reflex.Dom.Time
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Fixed
 import Data.Time.Clock
 import System.Random
+import Data.Typeable
 
 
 -- | Send events with Poisson timing with the given basis and rate
@@ -99,6 +101,7 @@ inhomogeneousPoissonFrom rnd rate maxRate t0 e = do
       -- Inter-event interval is drawn from exponential
       -- distribution accourding to u
       let dt             = realToFrac $ -1 * log(u)/maxRate :: NominalDiffTime
+          offset         = t `diffUTCTime` t0
           nEvents        = lastN + 1
           alreadyElapsed = diffUTCTime t tTargetLast
           tTarget        = addUTCTime dt tTargetLast
