@@ -13,11 +13,14 @@ module Reflex.Dom.Contrib.Widgets.ButtonGroup (
 ) where
 
 ------------------------------------------------------------------------------
-import           Control.Monad    (liftM)
-import           Data.Bool        (bool)
-import qualified Data.Map         as Map
-import           Data.Maybe       (fromMaybe, listToMaybe)
-import           Data.Monoid      ((<>))
+import           Control.Monad              (liftM)
+import           Control.Monad.IO.Class     (liftIO)
+import           Data.Bool                  (bool)
+import qualified Data.Map                   as Map
+import           Data.Maybe                 (fromMaybe, listToMaybe)
+import           Data.Monoid                ((<>))
+import           GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,
+                                             setChecked)
 import           Reflex.Dom       ((=:), EventName(Blur, Click, Focus,
                                                    Keydown, Keypress, Keyup),
                                    Event, Dynamic, holdDyn, MonadWidget,
@@ -26,7 +29,9 @@ import           Reflex.Dom       ((=:), EventName(Blur, Click, Focus,
                                    elDynAttr', forDyn, getDemuxed,
                                    joinDynThroughMap, leftmost, listWithKey,
                                    mapDyn, never, switchPromptlyDyn, qDyn,
-                                   unqDyn)
+                                   unqDyn, updated)
+import           Reflex.Dom.Class           (performEvent)
+import           Reflex.Dom.Widget.Basic    (_el_element)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------
@@ -178,4 +183,6 @@ radioGroup dynName dynEntryList cfg = do
         f <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                       , True  <$ (Focus `domEvent` b)]
         el "td" $ dynText txt
+        let e = castToHTMLInputElement $ _el_element b
+        _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)
