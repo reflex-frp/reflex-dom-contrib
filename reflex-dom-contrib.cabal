@@ -27,9 +27,10 @@ cabal-version:       >=1.10
 library
   hs-source-dirs: src
 
-  exposed-modules:     
+  exposed-modules:
     Reflex.Contrib.Interfaces
     Reflex.Contrib.Utils
+    Reflex.Dom.Contrib.Geoposition
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
     Reflex.Dom.Contrib.Time
