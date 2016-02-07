@@ -16,3 +16,22 @@ abstractions for reflex development that can eventually be merged upstream to
 a more stable home with stronger backwards compatibility guarantees.  But we
 think the reflex community needs a place to play and explore different ideas.
 This is that place.  Have fun!
+
+## Contributing
+
+The easiest way to build reflex-dom-contrib is to clone the [try-reflex
+repository](https://github.com/ryantrinkle/try-reflex). Assuming you cloned it
+in your home directory you can then do this:
+
+    cd path/to/reflex-dom-contrib
+    ~/try-reflex/work-on ghcjs ./.
+
+That will put you in a nix-shell with the necessary environment. Then you can
+build like this:
+
+    cabal install --ghcjs
+
+or
+
+    cabal configure --ghcjs
+    cabal build
