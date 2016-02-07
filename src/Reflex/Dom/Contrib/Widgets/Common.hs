@@ -410,6 +410,47 @@ blurOrEnter w = tagDyn (_hwidget_value w) fireEvent
 
 
 ------------------------------------------------------------------------------
+-- | Returns a unit event that fires when the widget loses focus or enter is
+-- pressed.  This function does not tagDyn the widget's value like
+-- blurOrEnter.
+blurOrEnterEvent :: Reflex t => HtmlWidget t a -> Event t ()
+blurOrEnterEvent w = leftmost
+    [ () <$ (ffilter (==13) $ _hwidget_keypress w)
+    , () <$ (ffilter not $ updated $ _hwidget_hasFocus w)
+    ]
+
+
+------------------------------------------------------------------------------
+-- | Allows you to restrict when a widget fires and only allow valid values to
+-- appear.  If an invalid value is entered, it will revert to the last known
+-- good value when the restrict event fires.
+enforcingWidget
+    :: MonadWidget t m
+    => (HtmlWidget t (Maybe a) -> Event t ())
+    -> GWidget t m (Maybe a)
+    -> GWidget t m a
+enforcingWidget restrictEvent wFunc cfg = do
+    rec
+      let iv = Just $ _widgetConfig_initialValue cfg
+          newSetValue = leftmost [ Just <$> _widgetConfig_setValue cfg
+                                 , Just <$> resetEvent
+                                 ]
+      w <- wFunc $ WidgetConfig newSetValue iv
+                                (_widgetConfig_attributes cfg)
+      let eMay = tag (current $ value w) $ restrictEvent w
+          e = fmapMaybe id eMay
+      v <- holdDyn (_widgetConfig_initialValue cfg) e
+      let resetEvent = tag (current v) $ ffilter isNothing eMay
+    return $ HtmlWidget { _hwidget_value = v
+                        , _hwidget_change = e
+                        , _hwidget_keypress = _hwidget_keypress w
+                        , _hwidget_keydown = _hwidget_keydown w
+                        , _hwidget_keyup = _hwidget_keyup w
+                        , _hwidget_hasFocus = _hwidget_hasFocus w
+                        }
+
+
+------------------------------------------------------------------------------
 -- | Allows you to restrict when a widget fires.  For instance,
 -- @restrictWidget blurOrEnter@ restricts a widget so it only fires on blur
 -- or when enter is pressed.

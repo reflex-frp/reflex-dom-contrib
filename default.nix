@@ -24,7 +24,7 @@
 
 mkDerivation {
   pname = "reflex-dom-contrib";
-  version = "0.1";
+  version = "0.4";
   src = builtins.filterSource (path: type: baseNameOf path != ".git") ./.;
   buildDepends = [
     aeson
