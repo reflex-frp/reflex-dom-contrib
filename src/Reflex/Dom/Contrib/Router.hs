@@ -12,20 +12,17 @@
 module Reflex.Dom.Contrib.Router where
 
 ------------------------------------------------------------------------------
-import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.Trans
-import           Data.Maybe
 import           GHCJS.DOM
 import           GHCJS.DOM.Document
-import           GHCJS.DOM.DOMWindow
+import           GHCJS.DOM.Types (unWindow)
+import           GHCJS.DOM.Window
 import           GHCJS.DOM.HTMLDocument
 #ifdef ghcjs_HOST_OS
-import           GHCJS.DOM.EventM (event, EventM)
-import           GHCJS.DOM.UIEvent
-import           GHCJS.Foreign
-import           GHCJS.Marshal
+import GHCJS.Foreign.Callback
 import           GHCJS.Types
+import           GHCJS.Prim
 #endif
 import           Prelude hiding (mapM, mapM_, all, sequence)
 import           Reflex.Dom
@@ -44,15 +41,14 @@ setUrl e = do
 
 
 ------------------------------------------------------------------------------
-getWindowLocation :: DOMWindow -> IO String
+getWindowLocation :: Window -> IO String
 #ifdef ghcjs_HOST_OS
 getWindowLocation w = do
-    jw <- toJSRef w
-    liftM fromJSString $ js_windowLocationPathname jw
+    liftM fromJSString $ js_windowLocationPathname (unWindow w)
 
 foreign import javascript unsafe
   "$1['location']['pathname']"
-  js_windowLocationPathname :: JSRef DOMWindow -> IO JSString
+  js_windowLocationPathname :: JSVal -> IO JSVal
 #else
 getWindowLocation =
     error "getWindowLocation: only works in GHCJS"
@@ -60,16 +56,15 @@ getWindowLocation =
 
 
 ------------------------------------------------------------------------------
-setupHistoryHandler :: DOMWindow -> (String -> IO ()) -> IO ()
+setupHistoryHandler :: Window -> (String -> IO ()) -> IO ()
 #ifdef ghcjs_HOST_OS
 setupHistoryHandler w cb = do
-    jw <- toJSRef w
-    cbRef <- syncCallback1 NeverRetain False (cb . fromJSString)
-    js_setupHistoryHandler jw cbRef
+    cbRef <- syncCallback1 ThrowWouldBlock (cb . fromJSString)
+    js_setupHistoryHandler (unWindow w) cbRef
 
 foreign import javascript unsafe
   "$1.onpopstate = function(event) { $2($1['location']['pathname']); }"
-  js_setupHistoryHandler :: JSRef DOMWindow -> (JSFun (JSString -> IO ())) -> IO ()
+  js_setupHistoryHandler :: JSVal -> Callback (JSVal -> IO ()) -> IO ()
 #else
 setupHistoryHandler =
     error "setupHistoryHandler: only works in GHCJS"
@@ -91,7 +86,7 @@ routeSite siteFunc = runWebGUI $ \webView -> do
     --wrapDomEvent w domWindowOnpopstate myGetEvent
     doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
              webViewGetDomDocument webView
-    body <- waitUntilJust $ documentGetBody doc
+    body <- waitUntilJust $ getBody doc
     attachWidget body webView $ do
       changes <- siteFunc path
       setUrl changes

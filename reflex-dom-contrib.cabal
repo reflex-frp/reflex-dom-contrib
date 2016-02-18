@@ -67,7 +67,8 @@ library
 
   if impl(ghcjs)
     build-depends:
-      ghcjs-base   >= 0.2  && < 0.3
+                  ghcjs-base   >= 0.2  && < 0.3,
+                  ghcjs-prim >= 0.1 && < 0.2
 
   default-language:    Haskell2010
 

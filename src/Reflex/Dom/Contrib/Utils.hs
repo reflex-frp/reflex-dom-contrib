@@ -21,10 +21,11 @@ module Reflex.Dom.Contrib.Utils
   , putDebugLn
   , putDebugLnE
   , listWithKeyAndSelection
-  , waitUtilJust
+  , waitUntilJust
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Map               (Map)
