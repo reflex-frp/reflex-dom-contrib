@@ -31,8 +31,6 @@ import           Control.Monad.Reader
 import           Data.Map               (Map)
 import           GHCJS.DOM.Types hiding (Event)
 #ifdef ghcjs_HOST_OS
-import           GHCJS.Foreign
-import           GHCJS.Marshal
 import           GHCJS.Types
 #endif
 import           Reflex
@@ -87,7 +85,7 @@ getWindowLocationPath w = do
 
 foreign import javascript unsafe
   "$1['location']['pathname']"
-  js_windowLocationPath :: JSRef Window ->  IO JSString
+  js_windowLocationPath :: JSVal ->  IO JSString
 #else
 getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
 #endif
