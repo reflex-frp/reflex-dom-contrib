@@ -21,9 +21,11 @@ module Reflex.Dom.Contrib.Utils
   , putDebugLn
   , putDebugLnE
   , listWithKeyAndSelection
+  , waitUntilJust
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Map               (Map)
@@ -156,3 +158,15 @@ listWithKeyAndSelection selection vals mkChild = do
     selected <- getDemuxed selectionDemux k
     mkChild k v selected
 
+
+------------------------------------------------------------------------------
+-- | Simple utility function to robustly get things like the current window,
+-- DOM document, document body, etc.
+waitUntilJust :: IO (Maybe a) -> IO a
+waitUntilJust a = do
+    mx <- a
+    case mx of
+      Just x -> return x
+      Nothing -> do
+        threadDelay 10000
+        waitUntilJust a
