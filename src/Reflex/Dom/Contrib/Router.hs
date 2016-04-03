@@ -15,9 +15,9 @@ module Reflex.Dom.Contrib.Router where
 import           Control.Monad
 import           Control.Monad.Trans
 import           GHCJS.DOM
-import           GHCJS.DOM.Document
+import           GHCJS.DOM.Document hiding (error)
 import           GHCJS.DOM.Types (unWindow)
-import           GHCJS.DOM.Window
+import           GHCJS.DOM.Window hiding (error)
 import           GHCJS.DOM.HTMLDocument
 #ifdef ghcjs_HOST_OS
 import GHCJS.Foreign.Callback
