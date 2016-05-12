@@ -76,9 +76,9 @@ setupHistoryHandler =
 -- function with the effective type signature `String -> m (Event t String)`.
 -- The String parameter is the initial value of the window location pathname.
 -- The return value is an event that updates the window location.
---routeSite
---    :: (forall t m a. (MonadWidget t m) => (String -> m (Event t String)))
---    -> IO ()
+routeSite
+    :: (forall t m. MonadWidget t m => String -> m (Event t String))
+    -> IO ()
 routeSite siteFunc = runWebGUI $ \webView -> do
     w <- waitUntilJust currentWindow
     path <- getWindowLocation w
