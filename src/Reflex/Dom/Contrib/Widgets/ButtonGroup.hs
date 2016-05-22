@@ -41,7 +41,7 @@ import           Reflex.Dom.Contrib.Widgets.Common
 -- | A general container for collecting drawable buttons into a group with
 --   one selection, under the HtmlWidget interface
 buttonGroup
-  :: forall t m a.(MonadWidget t m, Eq a, Show a)
+  :: forall t m a.(MonadWidget t m, Eq a)
   => String
      -- ^ Html tag name for the container (normally @"div"@ or @"table"@)
   -> (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
@@ -117,7 +117,7 @@ revLookup m (Just v) = listToMaybe . Map.keys $ Map.filter (== v) m
 
 ------------------------------------------------------------------------------
 -- | Produce a bootstrap <http://v4-alpha.getbootstrap.com/components/button-group/ button group>
-bootstrapButtonGroup :: forall t m a.(MonadWidget t m, Eq a, Show a)
+bootstrapButtonGroup :: forall t m a.(MonadWidget t m, Eq a)
                      => Dynamic t [(a,String)]
                         -- ^ Selectable values and their string labels
                      -> GWidget t m (Maybe a)
