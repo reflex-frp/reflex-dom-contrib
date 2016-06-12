@@ -40,6 +40,7 @@ library
     Reflex.Dom.Contrib.Widgets.ButtonGroup
     Reflex.Dom.Contrib.Widgets.CheckboxList
     Reflex.Dom.Contrib.Widgets.Common
+    Reflex.Dom.Contrib.Widgets.DynamicList
     Reflex.Dom.Contrib.Widgets.DynTabs
     Reflex.Dom.Contrib.Widgets.EditInPlace
     Reflex.Dom.Contrib.Widgets.Modal
