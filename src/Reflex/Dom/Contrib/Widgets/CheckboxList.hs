@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
 
 module Reflex.Dom.Contrib.Widgets.CheckboxList where
@@ -8,6 +9,7 @@ module Reflex.Dom.Contrib.Widgets.CheckboxList where
 import           Control.Monad
 import           Data.Set (Set)
 import qualified Data.Set as S
+import           Data.Text (Text)
 import           Reflex
 import           Reflex.Dom
 import           Reflex.Dom.Contrib.Widgets.Common
@@ -19,15 +21,15 @@ import           Reflex.Dom.Contrib.Widgets.Common
 -- the boxes that are checked.
 checkboxList
     :: forall t m a. (MonadWidget t m, Ord a, Show a)
-    => (a -> String)
+    => (a -> Text)
     -- ^ Function to show each item
-    -> (String -> a -> Bool)
+    -> (Text -> a -> Bool)
     -- ^ Function to filter each item
     -> Event t Bool
     -- ^ Blanket event to apply to all list items.  Allows you to have "select
     -- all" and "select none" buttons.  Fire True to select all and False to
     -- select none.
-    -> Dynamic t String
+    -> Dynamic t Text
     -- ^ A search string for filtering the list of items.
     -> Set a
     -- ^ Set of items that should be initially checked
@@ -59,16 +61,16 @@ checkboxList showFunc filterFunc blanketEvent searchString onItems items = do
 -- the boxes that are checked.
 checkboxListView
     :: forall t m a b. (MonadWidget t m, Ord a, Show a)
-    => (a -> String)
+    => (a -> Text)
     -- ^ Function to show each item
-    -> (String -> a -> Bool)
+    -> (Text -> a -> Bool)
     -- ^ Function to filter each item
     -> (a -> Bool -> b)
     -> Event t Bool
     -- ^ Blanket event to apply to all list items.  Allows you to have "select
     -- all" and "select none" buttons.  Fire True to select all and False to
     -- select none.
-    -> Dynamic t String
+    -> Dynamic t Text
     -- ^ A search string for filtering the list of items.
     -> Set a
     -- ^ Set of items that should be initially checked

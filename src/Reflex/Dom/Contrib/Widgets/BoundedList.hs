@@ -27,6 +27,7 @@ import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Monoid
+import           Data.Text (Text)
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
@@ -222,7 +223,7 @@ boundedSelectList itemLimit curSelected updateEvent getKey shouldRunExpensive
 -- hide.
 mkHiding
     :: (MonadWidget t m)
-    => Map String String
+    => Map Text Text
     -> m a
     -> Dynamic t Bool
     -- ^ Function of a dynamic active flag

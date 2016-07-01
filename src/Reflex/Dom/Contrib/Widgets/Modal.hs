@@ -18,6 +18,7 @@ module Reflex.Dom.Contrib.Widgets.Modal where
 import           Data.Bifunctor
 import           Data.Either
 import           Data.Map (Map)
+import           Data.Text (Text)
 import           Data.Monoid
 import           Reflex
 import           Reflex.Contrib.Utils
@@ -40,7 +41,7 @@ data HidingStrategy = DisplayNone
 
 
 data ModalConfig = ModalConfig
-    { modalAttributes     :: Map String String
+    { modalAttributes     :: Map Text Text
     -- ^ Attributes to put on the modal's outermost div
     }
 
