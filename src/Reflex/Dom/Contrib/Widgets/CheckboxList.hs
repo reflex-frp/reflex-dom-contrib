@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts         #-}
+{-# LANGUAGE GADTs                    #-}
 {-# LANGUAGE ScopedTypeVariables      #-}
 
 module Reflex.Dom.Contrib.Widgets.CheckboxList where

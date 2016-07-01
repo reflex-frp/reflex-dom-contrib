@@ -34,6 +34,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
+import           Data.Text (Text)
 import           Data.Time
 import           GHCJS.DOM.HTMLInputElement hiding (setValue)
 import           Reflex
@@ -49,6 +50,8 @@ class HasChange a where
   change :: a -> Change a
 
 
+tShow :: Show a => a -> Text
+tShow = toS . show
 
 ------------------------------------------------------------------------------
 -- | Generic config structure common to most widgets.  The attributes field
@@ -58,7 +61,7 @@ class HasChange a where
 data WidgetConfig t a
     = WidgetConfig { _widgetConfig_setValue :: Event t a
                    , _widgetConfig_initialValue :: a
-                   , _widgetConfig_attributes :: Dynamic t (Map String String)
+                   , _widgetConfig_attributes :: Dynamic t (Map Text Text)
                    }
 
 instance Reflex t => Functor (WidgetConfig t) where
@@ -74,7 +77,7 @@ instance (Reflex t, Default a) => Default (WidgetConfig t a) where
                      }
 
 instance HasAttributes (WidgetConfig t a) where
-  type Attrs (WidgetConfig t a) = Dynamic t (Map String String)
+  type Attrs (WidgetConfig t a) = Dynamic t (Map Text Text)
   attributes = widgetConfig_attributes
 
 instance HasSetValue (WidgetConfig t a) where
@@ -219,21 +222,19 @@ dateTimeWidget
     => GWidget t m (Maybe UTCTime)
 dateTimeWidget cfg = do
     let wValue = _widgetConfig_setValue cfg
-        setDate = maybe "" (formatTime defaultTimeLocale dfmt)
-        setTime = maybe "" (formatTime defaultTimeLocale tfmt)
+        setDate = maybe mempty (toS . formatTime defaultTimeLocale dfmt)
+        setTime = maybe mempty (toS . formatTime defaultTimeLocale tfmt)
     el "div" $ do
-        di <- htmlTextInput "date" $ def
-          & setValue .~ (setDate <$> wValue)
-          & attributes .~ _widgetConfig_attributes cfg
-          & widgetConfig_initialValue .~ setDate
-              (_widgetConfig_initialValue cfg)
-        ti <- htmlTextInput "time" $ def
-          & setValue .~ (setTime <$> wValue)
-          & attributes .~ _widgetConfig_attributes cfg
-          & widgetConfig_initialValue .~ setTime
-              (_widgetConfig_initialValue cfg)
+        di <- htmlTextInput "date" $ WidgetConfig
+          (setDate <$> wValue)
+          (setDate (_widgetConfig_initialValue cfg))
+          (_widgetConfig_attributes cfg)
+        ti <- htmlTextInput "time" $ WidgetConfig
+          (setTime <$> wValue)
+          (setTime (_widgetConfig_initialValue cfg))
+          (_widgetConfig_attributes cfg)
         combineWidgets (\d t -> parseTimeM True defaultTimeLocale "%F %X" $
-                                  toS $ d ++ " " ++ t ++ ":00")
+                                  toS d ++ " " ++ toS t ++ ":00")
           di ti
   where
     dfmt = "%F"
@@ -247,15 +248,13 @@ dateWidget
     => GWidget t m (Maybe Day)
 dateWidget cfg = do
     let setVal = showD <$> _widgetConfig_setValue cfg
-    di <- htmlTextInput "date" $ def
-      & setValue .~ setVal
-      & attributes .~ _widgetConfig_attributes cfg
-      & widgetConfig_initialValue .~ showD
-          (_widgetConfig_initialValue cfg)
-    mapWidget (parseTimeM True defaultTimeLocale fmt) di
+    di <- htmlTextInput "date" $ WidgetConfig
+      setVal (showD (_widgetConfig_initialValue cfg))
+      (_widgetConfig_attributes cfg)
+    mapWidget (parseTimeM True defaultTimeLocale fmt . toS) di
   where
     fmt = "%F"
-    showD = maybe "" (formatTime defaultTimeLocale fmt)
+    showD = maybe "" (toS . formatTime defaultTimeLocale fmt)
 
 
 ------------------------------------------------------------------------------
@@ -267,19 +266,16 @@ htmlCheckbox cfg = do
     cb <- checkbox (_widgetConfig_initialValue cfg) $ def
       & setValue .~ _widgetConfig_setValue cfg
       & attributes .~ _widgetConfig_attributes cfg
-    return $ HtmlWidget
-      (_checkbox_value cb)
-      (_checkbox_change cb)
-      never never never
-      (constDyn False)
+    return $ HtmlWidget (_checkbox_value cb) never -- FIXME Wrong
+                        never never never (constDyn False)
 
 
 ------------------------------------------------------------------------------
 -- | HtmlWidget version of reflex-dom's textInput.
 htmlTextInput
     :: MonadWidget t m
-    => String
-    -> GWidget t m String
+    => Text
+    -> GWidget t m Text
 htmlTextInput inputType cfg = do
     (_,w) <- htmlTextInput' inputType cfg
     return w
@@ -290,9 +286,9 @@ htmlTextInput inputType cfg = do
 -- HTMLInputElement.
 htmlTextInput'
     :: MonadWidget t m
-    => String
-    -> WidgetConfig t String
-    -> m (HTMLInputElement, HtmlWidget t String)
+    => Text
+    -> WidgetConfig t Text
+    -> m (HTMLInputElement, HtmlWidget t Text)
 htmlTextInput' inputType cfg = do
     ti <- textInput $ def
       & setValue .~ _widgetConfig_setValue cfg
@@ -316,9 +312,9 @@ readableWidget
     :: (MonadWidget t m, Show a, Readable a)
     => GWidget t m (Maybe a)
 readableWidget cfg = do
-    let setVal = maybe "" show <$> _widgetConfig_setValue cfg
+    let setVal = maybe "" tShow <$> _widgetConfig_setValue cfg
     w <- htmlTextInput "text" $ WidgetConfig setVal
-      (maybe "" show (_widgetConfig_initialValue cfg))
+      (maybe "" tShow (_widgetConfig_initialValue cfg))
       (_widgetConfig_attributes cfg)
     let parse = fromText . toS
     mapWidget parse w
@@ -348,7 +344,7 @@ intWidget = readableWidget
 htmlDropdown
     :: (MonadWidget t m, Eq b)
     => Dynamic t [a]
-    -> (a -> String)
+    -> (a -> Text)
     -> (a -> b)
     -> WidgetConfig t b
     -> m (Widget0 t b)
@@ -379,7 +375,7 @@ htmlDropdown items f payload cfg = do
 htmlDropdownStatic
     :: (MonadWidget t m, Eq b)
     => [a]
-    -> (a -> String)
+    -> (a -> Text)
     -> (a -> b)
     -> WidgetConfig t b
     -> m (Widget0 t b)
@@ -485,9 +481,9 @@ inputOnEnter wFunc cfg = do
 -- | A list dropdown widget.
 listDropdown :: (MonadWidget t m)
   => Dynamic t [a]
-  -> (a -> String)
-  -> Dynamic t (Map String String)
-  -> String
+  -> (a -> Text)
+  -> Dynamic t (Map Text Text)
+  -> Text
   -> m (Dynamic t (Maybe a))
 listDropdown xs f attrs defS = do
   m <- mapDyn (M.fromList . zip [(1::Int)..]) xs

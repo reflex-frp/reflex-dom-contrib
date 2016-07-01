@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -22,6 +23,8 @@ import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
 import           Data.Monoid
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           Data.Time
 import           Data.Word
 import           Reflex
@@ -40,7 +43,7 @@ import           Reflex.Dom.Contrib.Xhr
 data PaginationQuery = PaginationQuery
   { _pqLimit        :: Word64
   , _pqOffset       :: Word64
-  , _pqSearchString :: String
+  , _pqSearchString :: Text
   } deriving (Eq,Show,Read,Ord)
 
 makeLenses ''PaginationQuery
@@ -146,9 +149,9 @@ instance Default PQParams where
 paginatedQuery
   :: forall t m k a. (MonadWidget t m, Show k, Ord k, FromJSON a)
   => PQParams
-  -> (String -> a -> Bool)
-  -> String
-  -> Event t (Map String ByteString, PaginationInput k)
+  -> (Text -> a -> Bool)
+  -> Text
+  -> Event t (Map Text ByteString, PaginationInput k)
   -- ^ Param map and pagination structure.  k is any additional information
   -- that you need to disambiguate multiple PaginationQuery entries.
   -> m (Event t (Maybe (PaginationResults a)))
@@ -199,10 +202,10 @@ prune n m =
 -- cannot be used to serve the results of the current requested query.
 cachedQuery
     :: (MonadWidget t m, Show k, Ord k, FromJSON a)
-    => (String -> a -> Bool)
-    -> String
+    => (Text -> a -> Bool)
+    -> Text
     -> PaginationCache k (PaginationResults a)
-    -> (Map String ByteString, PaginationInput k)
+    -> (Map Text ByteString, PaginationInput k)
     -> m (Event t (PaginationOutput k (PaginationResults a)))
 cachedQuery matchSearchString url cache input = do
     let (k, pq) = snd input
@@ -235,7 +238,7 @@ isSubSearch
     -- ^ Cached query results
     -> Bool
 isSubSearch pq pv =
-    (_pqSearchString (_pvQuery pv) `isInfixOf` _pqSearchString pq) &&
+    (_pqSearchString (_pvQuery pv) `T.isInfixOf` _pqSearchString pq) &&
     (_prTotalCount pr == fromIntegral (length (_prResults pr))) &&
     (_prOffset pr == 0)
   where

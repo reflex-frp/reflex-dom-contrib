@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE RecursiveDo         #-}
@@ -19,10 +20,11 @@ import           Control.Monad.Reader
 import           Data.Aeson
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Default
-import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
+import           Data.Monoid
 import           Data.String.Conv
+import           Data.Text (Text)
 import qualified Data.Text as T
 import           Network.HTTP.Types.URI
 ------------------------------------------------------------------------------
@@ -33,39 +35,53 @@ import           Reflex.Dom
 
 ------------------------------------------------------------------------------
 -- | URL encodes a map of key-value pairs.
-formEncode :: Map String ByteString -> String
+formEncode :: Map Text ByteString -> Text
 formEncode m =
-    intercalate "&" $
-      map (\(k,v) -> k ++ "=" ++ (encodeToString v)) $ M.toList m
+    T.intercalate "&" $
+      map (\(k,v) -> k <> "=" <> (encodeToText v)) $ M.toList m
   where
-    encodeToString :: ByteString -> String
-    encodeToString = toS . urlEncode True . toS
+    encodeToText :: ByteString -> Text
+    encodeToText = toS . urlEncode True . toS
 
 
 ------------------------------------------------------------------------------
 -- | Form encodes a JSON object.
-formEncodeJSON :: ToJSON a => a -> String
+formEncodeJSON :: ToJSON a => a -> Text
 formEncodeJSON a = case toJSON a of
     Object m ->
-      formEncode $ M.fromList $ map (bimap T.unpack encode) $ itoList m
+      formEncode $ M.fromList $ map (bimap id encode) $ itoList m
     _ -> error "formEncodeJSON requires an Object"
 
 
 ------------------------------------------------------------------------------
 -- | Convenience function for constructing a POST request.
 toPost
-    :: String
+    :: Text
     -- ^ URL
-    -> String
+    -> a
     -- ^ The post data
-    -> XhrRequest
+    -> XhrRequest a
 toPost url d =
     XhrRequest "POST" url $ def { _xhrRequestConfig_headers = headerUrlEnc
-                                , _xhrRequestConfig_sendData = Just d
+                                , _xhrRequestConfig_sendData = d
                                 }
   where
-    headerUrlEnc :: Map String String
+    headerUrlEnc :: Map Text Text
     headerUrlEnc = "Content-type" =: "application/x-www-form-urlencoded"
+
+--toPost
+--    :: Text
+--    -- ^ URL
+--    -> Text
+--    -- ^ The post data
+--    -> XhrRequest (Maybe Text)
+--toPost url d =
+--    XhrRequest "POST" url $ def { _xhrRequestConfig_headers = headerUrlEnc
+--                                , _xhrRequestConfig_sendData = Just d
+--                                }
+--  where
+--    headerUrlEnc :: Map Text Text
+--    headerUrlEnc = "Content-type" =: "application/x-www-form-urlencoded"
 
 
 ------------------------------------------------------------------------------
@@ -74,8 +90,8 @@ toPost url d =
 -- you to match things that generated the request with their corresponding
 -- responses.
 performAJAX
-    :: (MonadWidget t m)
-    => (a -> XhrRequest)
+    :: (MonadWidget t m, IsXhrPayload a)
+    => (a -> XhrRequest a)
     -- ^ Function to build the request
     -> (XhrResponse -> b)
     -- ^ Function to parse the response
@@ -93,7 +109,7 @@ performAJAX mkRequest parseResponse req =
 -- object as output.
 performJsonAjax
     :: (MonadWidget t m, ToJSON a, FromJSON b)
-    => Event t (String, a)
+    => Event t (Text, a)
     -- ^ Event with a URL and a JSON object to be sent
     -> m (Event t (a, Maybe b))
 performJsonAjax req =
@@ -102,6 +118,6 @@ performJsonAjax req =
              liftIO $ cb (a, decodeXhrResponse response)
       return ()
   where
-    mkRequest url a = toPost url (formEncodeJSON a)
+    mkRequest url a = toPost url (T.unpack $ formEncodeJSON a)
 
 

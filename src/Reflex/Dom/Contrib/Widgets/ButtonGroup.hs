@@ -1,9 +1,11 @@
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Reflex.Dom.Contrib.Widgets.ButtonGroup (
@@ -19,6 +21,7 @@ import           Data.Bool                  (bool)
 import qualified Data.Map                   as Map
 import           Data.Maybe                 (fromMaybe, listToMaybe)
 import           Data.Monoid                ((<>))
+import           Data.Text                  (Text)
 import           GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,
                                              setChecked)
 import           Reflex.Dom       ((=:), EventName(Blur, Click, Focus,
@@ -29,9 +32,7 @@ import           Reflex.Dom       ((=:), EventName(Blur, Click, Focus,
                                    elDynAttr', forDyn, getDemuxed,
                                    joinDynThroughMap, leftmost, listWithKey,
                                    mapDyn, never, switchPromptlyDyn, qDyn,
-                                   unqDyn, updated)
-import           Reflex.Dom.Class           (performEvent)
-import           Reflex.Dom.Widget.Basic    (_el_element)
+                                   unqDyn, updated, performEvent, _el_element)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------
@@ -42,7 +43,7 @@ import           Reflex.Dom.Contrib.Widgets.Common
 --   one selection, under the HtmlWidget interface
 buttonGroup
   :: forall t m a.(MonadWidget t m, Eq a)
-  => String
+  => Text
      -- ^ Html tag name for the container (normally @"div"@ or @"table"@)
   -> (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
      -- ^ WidgetMonadic action for rendering a single button, returning click events and focus state
@@ -118,7 +119,7 @@ revLookup m (Just v) = listToMaybe . Map.keys $ Map.filter (== v) m
 ------------------------------------------------------------------------------
 -- | Produce a bootstrap <http://v4-alpha.getbootstrap.com/components/button-group/ button group>
 bootstrapButtonGroup :: forall t m a.(MonadWidget t m, Eq a)
-                     => Dynamic t [(a,String)]
+                     => Dynamic t [(a,Text)]
                         -- ^ Selectable values and their string labels
                      -> GWidget t m (Maybe a)
                         -- ^ Button group in a 'GWidget' interface (function from 'WidgetConfig' to 'HtmlWidget' )
@@ -155,9 +156,9 @@ bootstrapButtonGroup dynEntryList cfg = do
 ------------------------------------------------------------------------------
 -- | A group of radio buttons in a table layout
 radioGroup :: forall t m a.(MonadWidget t m, Eq a, Show a)
-           => Dynamic t String
+           => Dynamic t Text
               -- ^ The name for the button group (different groups should be given different names)
-           -> Dynamic t [(a,String)]
+           -> Dynamic t [(a,Text)]
               -- ^ Selectable values and their string labels
            -> GWidget t m (Maybe a)
               -- ^ Radio group in a 'GWidget' interface (function from 'WidgetConfig' to 'HtmlWidget' )

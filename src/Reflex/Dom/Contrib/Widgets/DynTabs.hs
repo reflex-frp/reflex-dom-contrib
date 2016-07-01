@@ -30,6 +30,7 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
 import qualified Data.Map as M
 import           Data.Monoid
 import qualified Data.Set as S
+import           Data.Text (Text)
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
@@ -45,7 +46,7 @@ class (Eq tab, Ord tab) => Tab m tab where
 ------------------------------------------------------------------------------
 tabBar
     :: forall t m tab. (MonadWidget t m, Tab m tab)
-    => String
+    => Text
     -> tab
     -- ^ Initial open tab
     -> [tab]
@@ -95,7 +96,7 @@ tabPane currentTab t child = do
 -- | Sets the \"active\" class 
 activeHelper
   :: MonadWidget t m
-  => String
+  => Text
   -> m ()
   -> Dynamic t Bool
   -- ^ Is selected

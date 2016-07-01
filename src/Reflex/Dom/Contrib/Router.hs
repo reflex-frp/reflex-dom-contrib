@@ -25,7 +25,7 @@ import           GHCJS.Types
 import           GHCJS.Prim
 #endif
 import           Prelude hiding (mapM, mapM_, all, sequence)
-import           Reflex.Dom
+import           Reflex.Dom hiding (Window, fromJSString)
 import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 
@@ -87,7 +87,7 @@ routeSite siteFunc = runWebGUI $ \webView -> do
     doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
              webViewGetDomDocument webView
     body <- waitUntilJust $ getBody doc
-    attachWidget body webView $ do
+    attachWidget body (WebViewSingleton webView) $ do
       changes <- siteFunc path
       setUrl changes
       return ()
