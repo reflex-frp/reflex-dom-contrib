@@ -34,10 +34,10 @@ import           Reflex.Dom
 
 ------------------------------------------------------------------------------
 -- | URL encodes a map of key-value pairs.
-formEncode :: Map String ByteString -> T.Text
+formEncode :: Map T.Text ByteString -> T.Text
 formEncode m =
-    intercalate "&" $
-      map (\(k,v) -> k ++ "=" ++ (encodeToText v)) $ M.toList m
+    T.intercalate "&" $
+      map (\(k,v) -> T.concat [k,"=",encodeToText v]) $ M.toList m
   where
     encodeToText :: ByteString -> T.Text
     encodeToText = toS . urlEncode True . toS
