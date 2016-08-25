@@ -4,7 +4,8 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-|
 
 Convenience functions for dealing with XMLHttpRequest.
@@ -33,38 +34,38 @@ import           Reflex.Dom
 
 ------------------------------------------------------------------------------
 -- | URL encodes a map of key-value pairs.
-formEncode :: Map String ByteString -> String
+formEncode :: Map String ByteString -> T.Text
 formEncode m =
     intercalate "&" $
-      map (\(k,v) -> k ++ "=" ++ (encodeToString v)) $ M.toList m
+      map (\(k,v) -> k ++ "=" ++ (encodeToText v)) $ M.toList m
   where
-    encodeToString :: ByteString -> String
-    encodeToString = toS . urlEncode True . toS
+    encodeToText :: ByteString -> T.Text
+    encodeToText = toS . urlEncode True . toS
 
 
 ------------------------------------------------------------------------------
 -- | Form encodes a JSON object.
-formEncodeJSON :: ToJSON a => a -> String
+formEncodeJSON :: ToJSON a => a -> T.Text
 formEncodeJSON a = case toJSON a of
     Object m ->
-      formEncode $ M.fromList $ map (bimap T.unpack encode) $ itoList m
+      formEncode $ M.fromList $ map (bimap id encode) $ itoList m
     _ -> error "formEncodeJSON requires an Object"
 
 
 ------------------------------------------------------------------------------
 -- | Convenience function for constructing a POST request.
 toPost
-    :: String
+    :: T.Text
     -- ^ URL
-    -> String
+    -> T.Text
     -- ^ The post data
-    -> XhrRequest
+    -> XhrRequest (Maybe T.Text)
 toPost url d =
     XhrRequest "POST" url $ def { _xhrRequestConfig_headers = headerUrlEnc
                                 , _xhrRequestConfig_sendData = Just d
                                 }
   where
-    headerUrlEnc :: Map String String
+    headerUrlEnc :: Map T.Text T.Text
     headerUrlEnc = "Content-type" =: "application/x-www-form-urlencoded"
 
 
@@ -75,7 +76,7 @@ toPost url d =
 -- responses.
 performAJAX
     :: (MonadWidget t m)
-    => (a -> XhrRequest)
+    => (a -> XhrRequest T.Text)
     -- ^ Function to build the request
     -> (XhrResponse -> b)
     -- ^ Function to parse the response
@@ -93,7 +94,7 @@ performAJAX mkRequest parseResponse req =
 -- object as output.
 performJsonAjax
     :: (MonadWidget t m, ToJSON a, FromJSON b)
-    => Event t (String, a)
+    => Event t (T.Text, a)
     -- ^ Event with a URL and a JSON object to be sent
     -> m (Event t (a, Maybe b))
 performJsonAjax req =

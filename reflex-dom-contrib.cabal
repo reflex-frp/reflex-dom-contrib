@@ -46,9 +46,9 @@ library
     Reflex.Dom.Contrib.Widgets.Modal
     Reflex.Dom.Contrib.Widgets.Svg
 
-  if impl(ghcjs)
-   exposed-modules:
-     Reflex.Dom.Contrib.Geoposition
+--  if impl(ghcjs)
+--   exposed-modules:
+--     Reflex.Dom.Contrib.Geoposition
 
   build-depends:
     aeson        >= 0.8  && < 0.12,
@@ -63,8 +63,8 @@ library
     mtl          >= 2.0  && < 2.3,
     random       >= 1.0  && < 1.2,
     readable     >= 0.3  && < 0.4,
-    reflex       >= 0.2  && < 0.5,
-    reflex-dom   >= 0.2  && < 0.4,
+    reflex       >= 0.2  && < 0.6,
+    reflex-dom   >= 0.2  && < 0.5,
     safe         >= 0.3  && < 0.4,
     string-conv  >= 0.1  && < 0.2,
     text         >= 1.2  && < 1.3,

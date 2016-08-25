@@ -1,5 +1,6 @@
-{-# LANGUAGE RecursiveDo #-}
-
+{-# LANGUAGE RecursiveDo      #-}
+{-# LANGUAGE GADTs            #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Reflex.Dom.Contrib.Widgets.DynamicList where
 
 ------------------------------------------------------------------------------

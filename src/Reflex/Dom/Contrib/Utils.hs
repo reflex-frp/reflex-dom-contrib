@@ -2,6 +2,8 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 {-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE FlexibleContexts         #-}
 
 {-|
 
@@ -34,7 +36,7 @@ import           GHCJS.DOM.Types hiding (Event)
 import           GHCJS.Types
 #endif
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom hiding (Window,fromJSString)
 ------------------------------------------------------------------------------
 
 

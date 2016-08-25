@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, TypeFamilies, FlexibleContexts #-}
 
 module Reflex.Dom.Contrib.Time (
     poissonLossyFrom
@@ -9,7 +9,8 @@ module Reflex.Dom.Contrib.Time (
 
 import Reflex
 import Reflex.Dom.Class
-import Reflex.Dom.Time
+import Reflex.Dom.Old
+import Reflex.Dom.Time hiding (poissonLossyFrom,inhomogeneousPoissonFrom,poissonLossy,inhomogeneousPoisson)
 
 import Control.Concurrent
 import Control.Monad

@@ -26,32 +26,33 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Reflex
 import Reflex.Dom
+import Data.Text (Text)
 ------------------------------------------------------------------------------
 
 {-# INLINABLE svgDynAttr' #-}
-svgDynAttr' :: forall t m a. MonadWidget t m => String -> Dynamic t (Map String String) -> m a -> m (El t, a)
+svgDynAttr' :: forall t m a. MonadWidget t m => Text -> Dynamic t (Map Text Text) -> m a -> m (El t, a)
 svgDynAttr' = elDynAttrNS' (Just "http://www.w3.org/2000/svg")
 
 {-# INLINABLE svgDynAttr #-}
-svgDynAttr :: forall t m a. MonadWidget t m => String -> Dynamic t (Map String String) -> m a -> m a
+svgDynAttr :: forall t m a. MonadWidget t m => Text -> Dynamic t (Map Text Text) -> m a -> m a
 svgDynAttr elementTag attrs child = snd <$> svgDynAttr' elementTag attrs child
 
 {-# INLINABLE svgAttr' #-}
-svgAttr' :: forall t m a. MonadWidget t m => String -> Map String String -> m a -> m (El t, a)
+svgAttr' :: forall t m a. MonadWidget t m => Text -> Map Text Text -> m a -> m (El t, a)
 svgAttr' elementTag attrs child = svgDynAttr' elementTag (constDyn attrs) child
 
 {-# INLINABLE svgAttr #-}
-svgAttr :: forall t m a. MonadWidget t m => String -> Map String String -> m a -> m a
+svgAttr :: forall t m a. MonadWidget t m => Text -> Map Text Text -> m a -> m a
 svgAttr elementTag attrs child = svgDynAttr elementTag (constDyn attrs) child
 
 {-# INLINABLE svg' #-}
-svg' :: forall t m a. MonadWidget t m => String -> m a -> m (El t, a)
+svg' :: forall t m a. MonadWidget t m => Text -> m a -> m (El t, a)
 svg' elementTag child = svgAttr' elementTag (Map.empty :: AttributeMap) child
 
 {-# INLINABLE svg #-}
-svg :: forall t m a. MonadWidget t m => String -> m a -> m a
+svg :: forall t m a. MonadWidget t m => Text -> m a -> m a
 svg elementTag child = svgAttr elementTag Map.empty child
 
-svgClass :: forall t m a. MonadWidget t m => String -> String -> m a -> m a
+svgClass :: forall t m a. MonadWidget t m => Text -> Text -> m a -> m a
 svgClass elementTag c child = svgAttr elementTag ("class" =: c) child
 
