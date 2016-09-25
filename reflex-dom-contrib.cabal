@@ -50,9 +50,9 @@ library
      Reflex.Dom.Contrib.Geoposition
 
   build-depends:
-    aeson        >= 0.8  && < 0.11,
-    base         >= 4.6  && < 4.9,
-    bifunctors   >= 4.0  && < 5.4,
+    aeson        >= 0.8  && < 1.1,
+    base         >= 4.6  && < 4.10,
+    bifunctors   >= 4.0  && < 5.5,
     bytestring   >= 0.10 && < 0.11,
     containers   >= 0.5  && < 0.6,
     data-default >= 0.5  && < 0.8,
