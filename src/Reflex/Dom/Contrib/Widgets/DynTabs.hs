@@ -23,14 +23,15 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
   ( Tab(..)
   , tabBar
   , tabPane
-  , activeHelper
+  , addDisplayNone
+  , addActiveClass
   ) where
 
 ------------------------------------------------------------------------------
+import           Data.Map (Map)
 import qualified Data.Map as M
-import           Data.Monoid
-import qualified Data.Set as S
 import           Data.Text (Text)
+import qualified Data.Text as T
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
@@ -39,78 +40,79 @@ import           Reflex.Dom.Contrib.Utils
 
 
 ------------------------------------------------------------------------------
-class (Eq tab, Ord tab) => Tab m tab where
-    tabIndicator :: tab -> m ()
+class Eq tab => Tab t m tab where
+    tabIndicator :: tab -> Dynamic t Bool -> m (Event t ())
 
 
 ------------------------------------------------------------------------------
+-- | Renders a dynamic list of tabs comprising a tab bar.
 tabBar
-    :: forall t m tab. (MonadWidget t m, Tab m tab)
-    => Text
-    -> tab
+    :: forall t m tab. (MonadWidget t m, Tab t m tab)
+    => tab
     -- ^ Initial open tab
     -> [tab]
     -> Event t [tab]
     -- ^ Dynamic list of the displayed tabs
     -> Event t tab
     -- ^ Event updating the currently selected tab
-    -> Dynamic t (S.Set tab)
-    -- ^ Set containing tabs that are currently disabled
     -> m (Dynamic t tab)
-tabBar tabClass initialSelected initialTabs tabs curTab disabledTabs = do
-    divClass "dyn-tab-bar" $ do
-      elAttr "ul" ("class" =: tabClass) $ do
-        rec let tabFunc = mapM (mkTab currentTab disabledTabs)
-            foo <- widgetHoldHelper tabFunc initialTabs tabs
-            let bar :: Event t tab = switch $ fmap leftmost $ current foo
-            currentTab <- holdDyn initialSelected $ leftmost [bar, curTab]
-        return currentTab
+tabBar initialSelected initialTabs tabs curTab = do
+    rec let tabFunc = mapM (mkTab currentTab)
+        foo <- widgetHoldHelper tabFunc initialTabs tabs
+        let bar :: Event t tab = switch $ fmap leftmost $ current foo
+        currentTab <- holdDyn initialSelected $ leftmost [bar, curTab]
+    return currentTab
 
 
 ------------------------------------------------------------------------------
 mkTab
-  :: (MonadWidget t m, Tab m tab)
-  => Dynamic t tab
-  -> Dynamic t (S.Set tab)
-  -> tab
-  -> m (Event t tab)
-mkTab currentTab disabledTabs t = do
-    isSelected <- mapDyn (==t) currentTab
-    isDisabled <- mapDyn (S.member t) disabledTabs
-    e <- activeHelper "li" (el "a" $ tabIndicator t) isSelected isDisabled
-    return $ gate (not <$> current isDisabled) (t <$ e)
+    :: (MonadWidget t m, Tab t m tab)
+    => Dynamic t tab
+    -> tab
+    -> m (Event t tab)
+mkTab currentTab t = do
+    e <- tabIndicator t ((==t) <$> currentTab)
+    return (t <$ e)
 
 
 ------------------------------------------------------------------------------
-tabPane :: (MonadWidget t m, Eq tab) => Dynamic t tab -> tab -> m a -> m a
-tabPane currentTab t child = do
-    isShown <- mapDyn (\c ->
-      if c == t then klass
-                else klass <> "style" =: "display: none") currentTab
-    elDynAttr "div" isShown child
+-- | Convenience function for constructing a tab pane that uses display none
+-- to hide the tab when it is not selected.
+tabPane
+    :: (MonadWidget t m, Eq tab)
+    => Map Text Text
+    -> Dynamic t tab
+    -> tab
+    -> m a
+    -> m a
+tabPane staticAttrs currentTab t child = do
+    let attrs = addDisplayNone (constDyn staticAttrs) ((==t) <$> currentTab)
+    elDynAttr "div" attrs child
+
+
+------------------------------------------------------------------------------
+-- | Helper function for hiding your tabs with display none.
+addDisplayNone
+    :: Reflex t
+    => Dynamic t (Map Text Text)
+    -> Dynamic t Bool
+    -> Dynamic t (Map Text Text)
+addDisplayNone attrs isActive = zipDynWith f isActive attrs
   where
-    klass = "class" =: "dyn-tab-pane"
+    f True as = as
+    f False as = M.insert "style" "display: none" as
 
 
 ------------------------------------------------------------------------------
--- | Sets the \"active\" class 
-activeHelper
-  :: MonadWidget t m
-  => Text
-  -> m ()
-  -> Dynamic t Bool
-  -- ^ Is selected
-  -> Dynamic t Bool
-  -- ^ Is disabled
-  -> m (Event t ())
-activeHelper elName children isSelected isDisabled = do
-    let mkAttrs selected disabled =
-          if disabled
-            then "class" =: "disabled"
-            else if selected
-                   then "class" =: "active"
-                   else M.empty
-    attrs <- combineDyn mkAttrs isSelected isDisabled
-    (li, _) <- elDynAttr' elName attrs children
-    return $ domEvent Click li
+-- | Helper function for adding an active class.  Useful for implemnting the
+-- Tab type class.
+addActiveClass
+    :: Reflex t
+    => Dynamic t Bool
+    -> Dynamic t (Map Text Text)
+    -> Dynamic t (Map Text Text)
+addActiveClass isActive attrs = zipDynWith f isActive attrs
+  where
+    f True as = M.insertWith (\n o -> T.unwords [o,n]) "class" "active" as
+    f False as = as
 
