@@ -42,6 +42,7 @@ import           Reflex.Dom
 import           Safe
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Utils
+import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 
 
@@ -49,9 +50,6 @@ class HasChange a where
   type Change a :: *
   change :: a -> Change a
 
-
-tShow :: Show a => a -> Text
-tShow = toS . show
 
 ------------------------------------------------------------------------------
 -- | Generic config structure common to most widgets.  The attributes field
@@ -312,9 +310,9 @@ readableWidget
     :: (MonadWidget t m, Show a, Readable a)
     => GWidget t m (Maybe a)
 readableWidget cfg = do
-    let setVal = maybe "" tShow <$> _widgetConfig_setValue cfg
+    let setVal = maybe "" tshow <$> _widgetConfig_setValue cfg
     w <- htmlTextInput "text" $ WidgetConfig setVal
-      (maybe "" tShow (_widgetConfig_initialValue cfg))
+      (maybe "" tshow (_widgetConfig_initialValue cfg))
       (_widgetConfig_attributes cfg)
     let parse = fromText . toS
     mapWidget parse w
