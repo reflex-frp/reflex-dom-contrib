@@ -1,3 +1,14 @@
+{-|
+
+This module probably an over-complicated and cumbersome solution to the problem
+it is trying to solve. See the comment on boundedSelectList' for a description
+of what it is trying to do. But on the whole you're probably better off not
+using this module. It's being kept around mainly for legacy support. Suggestions
+as to how this might be improved or redone better are most welcome.
+
+-}
+
+
 {-# LANGUAGE ConstraintKinds           #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE LambdaCase                #-}
@@ -89,7 +100,7 @@ boundedInsert (Just lim) (c, (k, v)) m =
 -- elements are kept in the DOM at any one time and prunes the least recently
 -- used items if that size is exceeded.
 boundedSelectList'
-    :: (MonadWidget t m, Show k, Ord k, Show v)
+    :: (MonadWidget t m, Ord k)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t k
@@ -111,21 +122,21 @@ boundedSelectList' itemLimit curSelected updateEvent
       ]
 
     counter <- count $ updated curSelected
-    curItem <- combineDyn findCurItem items curSelected
+    let curItem = zipDynWith findCurItem items curSelected
     let addCounter c (k,v) = (k, ((-c), (k, v)))
         taggedInitial = M.fromList $ zipWith addCounter [1..] $
                           M.toList rmInitialItems
     let initMap = limitMap taggedInitial itemLimit
     activeItems <- foldDyn ($) initMap $
       boundedInsert itemLimit <$>
-      attachDynWith (\c (k,v) -> (c, (k, (k,v))))
+      attachPromptlyDynWith (\c (k,v) -> (c, (k, (k,v))))
         counter (fmapMaybe id $ updated curItem)
     listWithKeyAndSelection curSelected activeItems wrapSingle
   where
     --wrapSingle :: k -> Dynamic t (BornAt, (k,v)) -> Dynamic t Bool -> m a
     wrapSingle k v b = do
-        v' <- mapDyn (snd . snd) =<< filterDyn (\x -> fst (snd x) == k) v
-        renderSingle k v' b
+        v' <- filterDyn (\x -> fst (snd x) == k) v
+        renderSingle k (snd . snd <$> v') b
 
 
 ------------------------------------------------------------------------------
@@ -136,7 +147,7 @@ boundedSelectList' itemLimit curSelected updateEvent
 -- results, this function only returns the result for the item that is
 -- currently selected.
 boundedSelectList0
-    :: (MonadWidget t m, Show k, Ord k, Show v)
+    :: (MonadWidget t m, Ord k)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t a
@@ -161,12 +172,12 @@ boundedSelectList0 itemLimit curSelected updateEvent getKey shouldRunExpensive
     rec
       let insertEvent = leftmost
             [ fmapMaybe id $
-                attachDynWith isAlreadyPresent res (updated curSelected)
-            , tagDyn curSelected pb
+                attachPromptlyDynWith isAlreadyPresent res (updated curSelected)
+            , tagPromptlyDyn curSelected pb
             ]
       newVal <- expensiveGetNew insertEvent
       let rm = ReflexMap mempty ((:[]) <$> newVal) never
-      curK <- mapDyn getKey curSelected
+          curK = getKey <$> curSelected
       res :: Dynamic t (Map k b) <-
         boundedSelectList' itemLimit curK updateEvent rm renderSingle
     return res
@@ -185,7 +196,7 @@ boundedSelectList0 itemLimit curSelected updateEvent getKey shouldRunExpensive
 -- results, this function only returns the result for the item that is
 -- currently selected.
 boundedSelectList
-    :: (MonadWidget t m, Show k, Ord k, Show v)
+    :: (MonadWidget t m, Ord k)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t a
@@ -210,7 +221,7 @@ boundedSelectList itemLimit curSelected updateEvent getKey shouldRunExpensive
                   expensiveGetNew defaultVal renderSingle = do
     res <- boundedSelectList0 itemLimit curSelected updateEvent getKey
                               shouldRunExpensive expensiveGetNew renderSingle
-    combineDyn getCurrent curSelected res
+    return $ zipDynWith getCurrent curSelected res
   where
     getCurrent cur listMap =
         case M.lookup (getKey cur) listMap of
@@ -229,7 +240,7 @@ mkHiding
     -- ^ Function of a dynamic active flag
     -> m a
 mkHiding staticAttrs w active = do
-    attrs <- mapDyn mkAttrs active
+    let attrs = mkAttrs <$> active
     elDynAttr "div" attrs w
   where
     mkAttrs True = staticAttrs

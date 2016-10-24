@@ -58,8 +58,7 @@ editInPlace active val = do
               (current editState) startEditing
           , Viewing <$ sheetEdit
           ]
-        cls <- mapDyn mkClass editState
-        (e, sheetEdit) <- elDynAttr' "span" cls $ do
+        (e, sheetEdit) <- elDynAttr' "span" (mkClass <$> editState) $ do
           de <- widgetHoldHelper (chooser val) Viewing (updated editState)
           return $ switch $ current de
         let selActive = tag active $ domEvent Click e
@@ -107,7 +106,7 @@ editor
 editor name = do
   pb <- getPostBuild
   (e,w) <- htmlTextInput' "text" $ WidgetConfig
-    (tagDyn name pb) "" (constDyn mempty)
+    (tagPromptlyDyn name pb) "" (constDyn mempty)
   performEvent_ $ ffor pb $ \_ -> do
     liftIO $ focus e
   let acceptEvent = leftmost

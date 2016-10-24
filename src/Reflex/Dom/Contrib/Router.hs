@@ -14,6 +14,8 @@ module Reflex.Dom.Contrib.Router where
 ------------------------------------------------------------------------------
 import           Control.Monad
 import           Control.Monad.Trans
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           GHCJS.DOM
 import           GHCJS.DOM.Document hiding (error)
 import           GHCJS.DOM.Types (unWindow)
@@ -77,7 +79,7 @@ setupHistoryHandler =
 -- The String parameter is the initial value of the window location pathname.
 -- The return value is an event that updates the window location.
 routeSite
-    :: (forall t m. MonadWidget t m => String -> m (Event t String))
+    :: (forall t m. MonadWidget t m => Text -> m (Event t Text))
     -> IO ()
 routeSite siteFunc = runWebGUI $ \webView -> do
     w <- waitUntilJust currentWindow
@@ -88,8 +90,8 @@ routeSite siteFunc = runWebGUI $ \webView -> do
              webViewGetDomDocument webView
     body <- waitUntilJust $ getBody doc
     attachWidget body (WebViewSingleton webView) $ do
-      changes <- siteFunc path
-      setUrl changes
+      changes <- siteFunc (T.pack path)
+      setUrl $ T.unpack <$> changes
       return ()
 
 --myGetEvent = do

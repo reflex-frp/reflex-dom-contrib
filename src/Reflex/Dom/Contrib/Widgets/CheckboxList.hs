@@ -20,7 +20,7 @@ import           Reflex.Dom.Contrib.Widgets.Common
 -- | Takes a list of labels to make checkboxes for and returns the labels of
 -- the boxes that are checked.
 checkboxList
-    :: forall t m a. (MonadWidget t m, Ord a, Show a)
+    :: forall t m a. (MonadWidget t m, Ord a)
     => (a -> Text)
     -- ^ Function to show each item
     -> (Text -> a -> Bool)
@@ -45,22 +45,22 @@ checkboxList showFunc filterFunc blanketEvent searchString onItems items = do
               if filterFunc search item
                 then mempty
                 else "style" =: "display:none"
-        attrs <- liftM nubDyn $ mapDyn mkAttrs searchString
+            attrs = uniqDyn $ mkAttrs <$> searchString
         elDynAttr "li" attrs $ el "label" $ do
           cb <- htmlCheckbox $ WidgetConfig
                   (leftmost [blanketEvent])
                   (S.member item onItems)
                   (constDyn mempty)
           text shown
-          mapWidget (\b -> if b then [item] else []) cb
-      wconcat es
+          return $ mapWidget (\b -> if b then [item] else []) cb
+      return $ wconcat es
 
 
 ------------------------------------------------------------------------------
 -- | Takes a list of labels to make checkboxes for and returns the labels of
 -- the boxes that are checked.
 checkboxListView
-    :: forall t m a b. (MonadWidget t m, Ord a, Show a)
+    :: forall t m a b. (MonadWidget t m, Ord a)
     => (a -> Text)
     -- ^ Function to show each item
     -> (Text -> a -> Bool)
@@ -87,7 +87,7 @@ checkboxListView showFunc filterFunc updateFunc blanketEvent searchString
               if filterFunc search item
                 then mempty
                 else "style" =: "display:none"
-        attrs <- liftM nubDyn $ mapDyn mkAttrs searchString
+        let attrs = uniqDyn $ mkAttrs <$> searchString
         elDynAttr "li" attrs $ el "label" $ do
           cb <- htmlCheckbox $ WidgetConfig
                   (leftmost [blanketEvent])

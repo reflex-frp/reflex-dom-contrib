@@ -65,7 +65,7 @@ hidingModal strategy cfg showm body = do
     return resE
   where
     go vis = do
-        attrs <- mapDyn (\b -> modalAttributes cfg <> visibility b) vis
+        let attrs = (\b -> modalAttributes cfg <> visibility b) <$> vis
         elDynAttr "div" attrs body
 
     visibility True = "style" =: "display:block;"
@@ -91,11 +91,9 @@ removingModal
   -> m (Dynamic t (Maybe b))
 removingModal cfg showm body = do
     rec let visE = leftmost [Just <$> showm, Nothing <$ closem]
-        (resE, closem) <- do
-            res <- widgetHoldHelper removeFromDOMWrapper Nothing visE
-            a <- mapDyn fst res
-            b <- extractEvent snd res
-            return (a,b)
+        res <- widgetHoldHelper removeFromDOMWrapper Nothing visE
+        let resE = fst <$> res
+            closem = extractEvent snd res
     return resE
   where
     removeFromDOMWrapper Nothing = return (Nothing, never)
@@ -121,7 +119,7 @@ mkModalBody header footer body = do
       dismiss <- header
       bodyRes <- divClass "modal-body" body
       (cancel, ok) <- footer bodyRes
-      let resE1 = tagDyn bodyRes ok
+      let resE1 = tagPromptlyDyn bodyRes ok
       let closem1 = leftmost
             [dismiss, cancel, () <$ ffilter isRight resE1]
       return (resE1, closem1)
