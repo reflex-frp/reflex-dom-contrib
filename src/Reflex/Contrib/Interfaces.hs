@@ -49,8 +49,8 @@ rlist2rmap
     -> ReflexMap t Int v
 rlist2rmap ReflexList{..} curMap = ReflexMap
     { rmInitialItems = M.fromList $ zip [0..] rlInitialItems
-    , rmInsertItems = attachDynWith f curMap rlInsertItems
-    , rmDeleteItems = attachDynWith g curMap rlDeleteItems
+    , rmInsertItems = attachPromptlyDynWith f curMap rlInsertItems
+    , rmDeleteItems = attachPromptlyDynWith g curMap rlDeleteItems
     }
   where
     f m is = zip [nextKey m..] is
@@ -72,14 +72,14 @@ data ReflexMap t k v = ReflexMap
 ------------------------------------------------------------------------------
 -- | Converts a ReflexList to a Dynamic list.
 toReflexMap
-    :: (Reflex t, MonadFix m, MonadHold t m, Eq a)
+    :: (Reflex t, MonadFix m, Eq a)
     => ReflexList t a
     -> (ReflexMap t Int a -> m (Dynamic t (Map Int a)))
     -> m (Dynamic t [a])
 toReflexMap rlist f = do
     rec let rmap = rlist2rmap rlist m
         m <- f rmap
-    mapDyn M.elems m
+    return $ M.elems <$> m
 
 
 ------------------------------------------------------------------------------

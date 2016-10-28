@@ -39,7 +39,7 @@ dynamicList w removeEvent addFunc addEvent initList = do
               , remove (current res)
               ]
         res <- listWithKeyShallowDiff initMap vals w
-    mapDyn M.elems res
+    return $ M.elems <$> res
   where
     addSpecific res = switch (foo <$> res)
     foo m = leftmost $ map (fmap (addNew m) . addFunc) $ M.elems m

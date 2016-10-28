@@ -147,7 +147,7 @@ instance Default PQParams where
 ------------------------------------------------------------------------------
 -- | Paginated querying with built-in search and results caching.
 paginatedQuery
-  :: forall t m k a. (MonadWidget t m, Show k, Ord k, FromJSON a)
+  :: forall t m k a. (MonadWidget t m, Ord k, FromJSON a)
   => PQParams
   -> (Text -> a -> Bool)
   -> Text
@@ -201,7 +201,7 @@ prune n m =
 -- | Checks a cache and makes a request to the supplied URL if the cached data
 -- cannot be used to serve the results of the current requested query.
 cachedQuery
-    :: (MonadWidget t m, Show k, Ord k, FromJSON a)
+    :: (MonadWidget t m, Ord k, FromJSON a)
     => (Text -> a -> Bool)
     -> Text
     -> PaginationCache k (PaginationResults a)

@@ -163,7 +163,7 @@ listWithKeyAndSelection
 listWithKeyAndSelection selection vals mkChild = do
   let selectionDemux = demux selection
   listWithKey vals $ \k v -> do
-    selected <- getDemuxed selectionDemux k
+    let selected = demuxed selectionDemux k
     mkChild k v selected
 
 
