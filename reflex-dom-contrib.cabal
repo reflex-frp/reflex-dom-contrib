@@ -1,6 +1,6 @@
 name:                reflex-dom-contrib
 version:             0.4.2
-synopsis:            A playground for experimenting with infrastructure and common code for reflex applications
+synopsis:            Common code and widgets for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
                      libraries for reflex FRP applications. This library is
