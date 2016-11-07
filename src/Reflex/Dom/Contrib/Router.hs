@@ -79,13 +79,27 @@ setupHistoryHandler =
 routeSite
     :: (forall t m. MonadWidget t m => String -> m (Event t String))
     -> IO ()
-routeSite siteFunc = runWebGUI $ \webView -> do
+routeSite siteFunc = routeSiteWithHead (\_ -> return ()) siteFunc
+
+------------------------------------------------------------------------------
+-- | Handles routing for a site. The 1st argument is head widget and
+-- the second one is a widget function with the effective type
+-- signature `String -> m (Event t String)`.  The String parameter is
+-- the initial value of the window location pathname.  The return
+-- value is an event that updates the window location.
+--routeSiteWithHead
+--  :: forall t m m1.
+--     (MonadWidget t m, m1 ~ m)
+--  => (String -> m1 ()) -> (String -> m (Event t String)) -> IO ()
+routeSiteWithHead h siteFunc = runWebGUI $ \webView -> do
     w <- waitUntilJust currentWindow
     path <- getWindowLocation w
     --setupHistoryHandler w (\arg -> putStrLn $ "ghcjs history handling!  " ++ arg)
     --wrapDomEvent w domWindowOnpopstate myGetEvent
     doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
              webViewGetDomDocument webView
+    head <- waitUntilJust $ getHead doc
+    _ <- attachWidget head webView $ h path
     body <- waitUntilJust $ getBody doc
     attachWidget body webView $ do
       changes <- siteFunc path
