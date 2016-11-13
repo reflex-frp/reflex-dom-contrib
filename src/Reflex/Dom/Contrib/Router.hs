@@ -43,6 +43,10 @@ data Route t = Route {
     _route_value :: Dynamic t T.Text -- ^ URL value
   }
 
+instance HasValue (Route t) where
+  type Value (Route t) = Dynamic t T.Text
+  value = _route_value
+
 -- | Manipulate and track the URL text for dynamic routing of a widget
 route :: (HasWebView m, MonadWidget t m) => RouteConfig t -> m (Route t)
 route (RouteConfig goForward goBack sSet) = do
