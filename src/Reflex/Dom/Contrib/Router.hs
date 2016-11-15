@@ -13,22 +13,22 @@
 module Reflex.Dom.Contrib.Router where
 
 ------------------------------------------------------------------------------
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.IO.Class    (MonadIO)
 import           Data.Default
-import           Data.Maybe                (fromJust)
 import qualified Data.Text                 as T
 import           Reflex.Dom                hiding (Window)
 #if ghcjs_HOST_OS
-import           GHCJS.DOM.History         (back, forward, pushState)
-import           GHCJS.DOM.Window          (getLocation, popState)
-import           GHCJS.DOM.Location        (toString)
-import           GHCJS.DOM.Window          (Window, getHistory)
-import           GHCJS.Marshal.Pure
+import           Data.Maybe                (fromJust)
+import           Control.Monad.IO.Class    (liftIO)
 import qualified GHCJS.DOM                 as DOM
 import qualified GHCJS.DOM.Document        as DOM
 import qualified GHCJS.DOM.EventM          as DOM
+import           GHCJS.DOM.History         (back, forward, pushState)
+import           GHCJS.DOM.Location        (toString)
+import           GHCJS.DOM.Window          (Window, getHistory,
+                                            getLocation, popState)
+import           GHCJS.Marshal.Pure
 #else
--- import Graphics.UI.Gtk.Types.Document
 #endif
 
 ------------------------------------------------------------------------------
@@ -53,6 +53,7 @@ instance HasValue (Route t) where
 
 -- | Manipulate and track the URL text for dynamic routing of a widget
 route :: (HasWebView m, MonadWidget t m) => RouteConfig t -> m (Route t)
+#if ghcjs_HOST_OS
 route (RouteConfig goForward goBack sSet) = do
   win <- askDomWindow
   loc <- getLocation' win
@@ -64,7 +65,11 @@ route (RouteConfig goForward goBack sSet) = do
     getLocation' win
   newLocs <- getPopState
   Route <$> holdDyn loc (leftmost [setLoc, newLocs])
+#else
+route = error "route is only available to ghcjs"
+#endif
 
+#if ghcjs_HOST_OS
 -- | Get the DOM window object.
 askDomWindow :: (HasWebView m, MonadIO m) => m Window
 askDomWindow = do
@@ -72,11 +77,20 @@ askDomWindow = do
   Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
   Just window <- liftIO $ DOM.getDefaultView doc
   return window
+#else
+askDomWindow :: (MonadIO m) => m Window
+askDomWindow = error "askDomWindow is only available to ghcjs"
+#endif
 
 getLocation' :: MonadIO m => Window -> m T.Text
+#if ghcjs_HOST_OS
 getLocation' w = toString . fromJust =<< liftIO (getLocation w)
+#else
+getLocation' = error "getLocation' is only available to ghcjs"
+#endif
 
 getPopState :: (MonadWidget t m) => m (Event t T.Text)
+#if ghcjs_HOST_OS
 getPopState = do
   window <- askDomWindow
   wrapDomEventMaybe window (`DOM.on` popState) $ do
@@ -84,13 +98,20 @@ getPopState = do
     case l of
       Nothing -> return Nothing
       Just loc -> do t <- toString loc; return (Just t)
+#else
+getPopState = error "getPopState is only available to ghcjs"
+#endif
 
 setWindowUrl :: MonadWidget t m => Event t T.Text -> m ()
+#if ghcjs_HOST_OS
 setWindowUrl url = do
   performEvent_ $ ffor url $ \u -> do
     win <- askDomWindow
     Just hist <- liftIO $ getHistory win
     pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) u
+#else
+setWindowUrl = error "setWindowUrl only available to ghcjs"
+#endif
 
 getWindowInitUrl :: MonadWidget t m => m T.Text
 getWindowInitUrl = getLocation' =<< askDomWindow
@@ -104,6 +125,7 @@ getWindowUrl = do
 
 #if ghcjs_HOST_OS
 #else
+data Document
 data Location
 data Window
 data JSVal
@@ -133,7 +155,11 @@ getState = undefined
 toString :: Location -> IO T.Text
 toString = undefined
 
+getDefaultView :: Document -> IO (Maybe Window)
 getDefaultView = undefined
 
+pushState :: History -> JSVal -> T.Text -> T.Text -> IO ()
 pushState = undefined
+
+
 #endif
