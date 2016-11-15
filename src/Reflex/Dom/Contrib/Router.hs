@@ -14,6 +14,7 @@ module Reflex.Dom.Contrib.Router where
 
 ------------------------------------------------------------------------------
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Data.Default
 import           Data.Maybe                (fromJust)
 import qualified Data.Text                 as T
 import           Reflex.Dom                hiding (Window)
@@ -38,6 +39,9 @@ data RouteConfig t = RouteConfig
   -- , _routeConfig_pathBase  :: T.Text
   --   -- ^ The part of the URL not related to SPA routing
   }
+
+instance Reflex t => Default (RouteConfig t) where
+  def = RouteConfig never never never
 
 data Route t = Route {
     _route_value :: Dynamic t T.Text -- ^ URL value
