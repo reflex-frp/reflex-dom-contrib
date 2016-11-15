@@ -22,6 +22,7 @@ determined dynamically.
 module Reflex.Dom.Contrib.Widgets.DynTabs
   ( Tab(..)
   , TabBar(..)
+  , TabBarConfig(..)
   , tabBar
   , tabPane
   , addDisplayNone
