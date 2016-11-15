@@ -85,6 +85,19 @@ getPopState = do
       Nothing -> return Nothing
       Just loc -> do t <- toString loc; return (Just t)
 
+setWindowUrl :: MonadWidget t m => Event t T.Text -> m ()
+setWindowUrl url = do
+  performEvent_ $ ffor url $ \u -> do
+    win <- askDomWindow
+    Just hist <- liftIO $ getHistory win
+    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) u
+
+getWindowUrl :: MonadWidget t m => m (Dynamic t T.Text)
+getWindowUrl = do
+  win <- askDomWindow
+  loc <- getLocation' win
+  newLocs <- getPopState
+  holdDyn loc newLocs
 
 #if ghcjs_HOST_OS
 #else
