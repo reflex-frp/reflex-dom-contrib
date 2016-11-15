@@ -92,6 +92,9 @@ setWindowUrl url = do
     Just hist <- liftIO $ getHistory win
     pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) u
 
+getWindowInitUrl :: MonadWidget t m => m T.Text
+getWindowInitUrl = getLocation' =<< askDomWindow
+
 getWindowUrl :: MonadWidget t m => m (Dynamic t T.Text)
 getWindowUrl = do
   win <- askDomWindow
