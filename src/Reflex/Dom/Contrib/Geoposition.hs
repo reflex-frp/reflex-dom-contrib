@@ -1,12 +1,14 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+
 module Reflex.Dom.Contrib.Geoposition where
 
 import           Control.Concurrent (forkIO)
 import           Control.Exception (catch, throwIO)
 import           Control.Monad.IO.Class (liftIO)
 
-import           Reflex (Event)
-import           Reflex.Dom (MonadWidget)
-import           Reflex.Dom.Class (performEventAsync)
+import           Reflex
+import           Reflex.Dom
 
 import           GHCJS.DOM (currentWindow)
 import           GHCJS.DOM.PositionError (PositionException(..), PositionErrorCode(..))

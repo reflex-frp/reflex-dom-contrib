@@ -1,5 +1,7 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE FlexibleContexts         #-}
+{-# LANGUAGE GADTs                    #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 {-# LANGUAGE RankNTypes               #-}
 
@@ -10,7 +12,8 @@ Misc reflex-dom helper functions.
 -}
 
 module Reflex.Dom.Contrib.Utils
-  ( alertEvent
+  ( tshow
+  , alertEvent
   , js_alert
   , confirmEvent
   , js_confirm
@@ -29,14 +32,21 @@ import           Control.Concurrent
 import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Map               (Map)
-import           GHCJS.DOM.Types hiding (Event)
+import           Data.Text              (Text)
+import qualified Data.Text           as T
+import           GHCJS.DOM.Types hiding (Text, Event)
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Types
 #endif
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom      hiding (Window, fromJSString)
 ------------------------------------------------------------------------------
 
+
+------------------------------------------------------------------------------
+-- | Helper function for showing Text.
+tshow :: Show a => a -> Text
+tshow = T.pack . show
 
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript alert dialog box when an
@@ -153,7 +163,7 @@ listWithKeyAndSelection
 listWithKeyAndSelection selection vals mkChild = do
   let selectionDemux = demux selection
   listWithKey vals $ \k v -> do
-    selected <- getDemuxed selectionDemux k
+    let selected = demuxed selectionDemux k
     mkChild k v selected
 
 

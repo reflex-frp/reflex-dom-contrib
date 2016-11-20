@@ -17,10 +17,10 @@ module Reflex.Dom.Contrib.Widgets.EditInPlace
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Lens hiding ((.=))
 import           Control.Monad.Trans
-import           Data.Default
 import           Data.Map (Map)
+import           Data.Text (Text)
+import qualified Data.Text as T
 import           GHCJS.DOM.Element
 import           Reflex
 import           Reflex.Dom
@@ -47,9 +47,9 @@ editInPlace
     :: MonadWidget t m
     => Behavior t Bool
     -- ^ Whether or not click-to-edit is enabled
-    -> Dynamic t String
+    -> Dynamic t Text
     -- ^ The definitive value of the thing being edited
-    -> m (Event t String)
+    -> m (Event t Text)
     -- ^ Event that fires when the text is edited
 editInPlace active val = do
     rec editState <- holdDyn Viewing $ leftmost
@@ -58,8 +58,7 @@ editInPlace active val = do
               (current editState) startEditing
           , Viewing <$ sheetEdit
           ]
-        cls <- mapDyn mkClass editState
-        (e, sheetEdit) <- elDynAttr' "span" cls $ do
+        (e, sheetEdit) <- elDynAttr' "span" (mkClass <$> editState) $ do
           de <- widgetHoldHelper (chooser val) Viewing (updated editState)
           return $ switch $ current de
         let selActive = tag active $ domEvent Click e
@@ -69,8 +68,8 @@ editInPlace active val = do
 
 
 ------------------------------------------------------------------------------
-mkClass :: EditState -> Map String String
-mkClass es = "class" =: (unwords ["editInPlace", ev])
+mkClass :: EditState -> Map Text Text
+mkClass es = "class" =: (T.unwords ["editInPlace", ev])
   where
     ev = case es of
            Viewing -> "viewing"
@@ -78,7 +77,7 @@ mkClass es = "class" =: (unwords ["editInPlace", ev])
 
 
 ------------------------------------------------------------------------------
-e2maybe :: SheetEditEvent -> Maybe String
+e2maybe :: SheetEditEvent -> Maybe Text
 e2maybe EditClose = Nothing
 e2maybe (NameChange s) = Just s
 
@@ -86,7 +85,7 @@ e2maybe (NameChange s) = Just s
 ------------------------------------------------------------------------------
 chooser
     :: MonadWidget t m
-    => Dynamic t String
+    => Dynamic t Text
     -> EditState
     -> m (Event t SheetEditEvent)
 chooser name Editing = editor name
@@ -94,7 +93,7 @@ chooser name Viewing = viewer name
 
 
 ------------------------------------------------------------------------------
-data SheetEditEvent = NameChange String
+data SheetEditEvent = NameChange Text
                     | EditClose
   deriving (Read,Show,Eq,Ord)
 
@@ -102,12 +101,12 @@ data SheetEditEvent = NameChange String
 ------------------------------------------------------------------------------
 editor
     :: MonadWidget t m
-    => Dynamic t String
+    => Dynamic t Text
     -> m (Event t SheetEditEvent)
 editor name = do
   pb <- getPostBuild
-  (e,w) <- htmlTextInput' "text" $
-    def & widgetConfig_setValue .~ tagDyn name pb
+  (e,w) <- htmlTextInput' "text" $ WidgetConfig
+    (tagPromptlyDyn name pb) "" (constDyn mempty)
   performEvent_ $ ffor pb $ \_ -> do
     liftIO $ focus e
   let acceptEvent = leftmost
@@ -123,7 +122,7 @@ editor name = do
 ------------------------------------------------------------------------------
 viewer
     :: MonadWidget t m
-    => Dynamic t String
+    => Dynamic t Text
     -> m (Event t SheetEditEvent)
 viewer name = do
   dynText name

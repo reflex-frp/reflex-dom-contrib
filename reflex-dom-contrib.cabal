@@ -1,6 +1,6 @@
 name:                reflex-dom-contrib
-version:             0.4.2
-synopsis:            A playground for experimenting with infrastructure and common code for reflex applications
+version:             0.5
+synopsis:            A place to experiment with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
                      libraries for reflex FRP applications. This library is
@@ -33,7 +33,6 @@ library
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
     Reflex.Dom.Contrib.Router
-    Reflex.Dom.Contrib.Time
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
@@ -51,7 +50,7 @@ library
      Reflex.Dom.Contrib.Geoposition
 
   build-depends:
-    aeson        >= 0.8  && < 0.12,
+    aeson        >= 0.8  && < 1.1,
     base         >= 4.6  && < 4.10,
     bifunctors   >= 4.0  && < 5.5,
     bytestring   >= 0.10 && < 0.11,
@@ -63,8 +62,8 @@ library
     mtl          >= 2.0  && < 2.3,
     random       >= 1.0  && < 1.2,
     readable     >= 0.3  && < 0.4,
-    reflex       >= 0.2  && < 0.5,
-    reflex-dom   >= 0.2  && < 0.4,
+    reflex       >= 0.2  && < 0.6,
+    reflex-dom   >= 0.2  && < 0.5,
     safe         >= 0.3  && < 0.4,
     string-conv  >= 0.1  && < 0.2,
     text         >= 1.2  && < 1.3,
