@@ -31,9 +31,9 @@ import qualified GHCJS.DOM                 as DOM
 import qualified GHCJS.DOM.Document        as DOM
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (back, forward, pushState)
-import           GHCJS.DOM.Location        (toString)
+import           GHCJS.DOM.Location        (getPathname, toString)
 import           GHCJS.DOM.Window          (Window, getHistory,
-                                            getLocation, getPathname, popState)
+                                            getLocation, popState)
 import           GHCJS.Marshal.Pure
 #else
 #endif
