@@ -21,6 +21,8 @@ determined dynamically.
 
 module Reflex.Dom.Contrib.Widgets.DynTabs
   ( Tab(..)
+  , TabBar(..)
+  , TabBarConfig(..)
   , tabBar
   , tabPane
   , addDisplayNone
@@ -28,6 +30,7 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
   ) where
 
 ------------------------------------------------------------------------------
+import           Data.Default
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Text (Text)
@@ -45,23 +48,38 @@ class Eq tab => Tab t m tab where
 
 
 ------------------------------------------------------------------------------
+-- | Tab bar widget inputs
+data TabBarConfig t tab = TabBarConfig
+    { _tabBarConfig_initialOpenTab :: tab
+    , _tabBarConfig_initialTabs    :: [tab]
+    , _tabBarConfig_tabListUpdates :: Event t [tab]
+    , _tabBarConfig_changeCurTab   :: Event t tab
+    }
+
+
+instance (Reflex t, Bounded tab, Enum tab) => Default (TabBarConfig t tab) where
+  def = TabBarConfig minBound [minBound..maxBound] never never
+
+
+------------------------------------------------------------------------------
+-- | Tab bar widget outputs
+data TabBar t tab = TabBar
+    { _tabBar_curTab    :: Dynamic t tab
+    , _tabBar_tabClicks :: Event t tab
+    }
+
+------------------------------------------------------------------------------
 -- | Renders a dynamic list of tabs comprising a tab bar.
 tabBar
     :: forall t m tab. (MonadWidget t m, Tab t m tab)
-    => tab
-    -- ^ Initial open tab
-    -> [tab]
-    -> Event t [tab]
-    -- ^ Dynamic list of the displayed tabs
-    -> Event t tab
-    -- ^ Event updating the currently selected tab
-    -> m (Dynamic t tab)
-tabBar initialSelected initialTabs tabs curTab = do
+    => TabBarConfig t tab
+    -> m (TabBar t tab)
+tabBar (TabBarConfig initialSelected initialTabs tabs curTab) = do
     rec let tabFunc = mapM (mkTab currentTab)
         foo <- widgetHoldHelper tabFunc initialTabs tabs
         let bar :: Event t tab = switch $ fmap leftmost $ current foo
         currentTab <- holdDyn initialSelected $ leftmost [bar, curTab]
-    return currentTab
+    return $ TabBar currentTab bar
 
 
 ------------------------------------------------------------------------------

@@ -17,22 +17,25 @@ import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Data.Bifunctor
 import qualified Data.ByteString.Char8     as BS
 import qualified Data.ByteString.Lazy      as BSL
+import Data.Monoid ((<>))
+import           Data.Default
 import           Data.Maybe                (fromJust)
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
 import           Reflex.Dom                hiding (Window)
 import qualified Web.Routes.PathInfo       as WR
 #if ghcjs_HOST_OS
-import           GHCJS.DOM.History         (back, forward, pushState)
-import           GHCJS.DOM.Window          (getLocation, popState)
-import           GHCJS.DOM.Location        (toString)
-import           GHCJS.DOM.Window          (Window, getHistory)
-import           GHCJS.Marshal.Pure
+import           Data.Maybe                (fromJust)
+import           Control.Monad.IO.Class    (liftIO)
 import qualified GHCJS.DOM                 as DOM
 import qualified GHCJS.DOM.Document        as DOM
-import qualified GHCJS.DOM.EventM          as DOM
+import           GHCJS.DOM.EventM          (on)
+import           GHCJS.DOM.History         (back, forward, pushState)
+import           GHCJS.DOM.Location        (toString)
+import           GHCJS.DOM.Window          (Window, getHistory,
+                                            getLocation, getPathname, popState)
+import           GHCJS.Marshal.Pure
 #else
--- import Graphics.UI.Gtk.Types.Document
 #endif
 
 ------------------------------------------------------------------------------
@@ -40,9 +43,12 @@ data RouteConfig t a = RouteConfig
   { _routeConfig_forward   :: Event t () -- ^ Move the browser history forward
   , _routeConfig_back      :: Event t () -- ^ Move the browser history back
   , _routeConfig_pushState :: Event t a  -- ^ Push to the URL state
-  -- , _routeConfig_pathBase  :: T.Text
+  , _routeConfig_pathBase  :: T.Text
   --   -- ^ The part of the URL not related to SPA routing
   }
+
+instance Reflex t => Default (RouteConfig t a) where
+  def = RouteConfig never never never ""
 
 data Route t a = Route {
     _route_value :: Dynamic t (Either T.Text a) -- ^ URL value
@@ -53,28 +59,56 @@ instance HasValue (Route t a) where
   value = _route_value
 
 -- | Manipulate and track the URL text for dynamic routing of a widget
-route :: (HasWebView m, MonadWidget t m)
+route
+  :: (HasWebView m, MonadWidget t m)
   => (T.Text -> Either T.Text a)
   -> (a -> T.Text)
-  -> RouteConfig t
+  -> RouteConfig t a
   -> m (Route t a)
-route (RouteConfig goForward goBack sSet) = do
+-- #if ghcjs_HOST_OS
+route to from (RouteConfig goForward goBack sSet pBase) = do
   win <- askDomWindow
-  loc <- getLocation' win
+  path0 :: T.Text <- liftIO $ getLocation win >>= getPathname . fromJust
+  let pathVal0 = parsePath path0
   Just hist <- liftIO $ getHistory win
   performEvent_ $ ffor goForward $ \_ -> liftIO (forward hist)
   performEvent_ $ ffor goBack    $ \_ -> liftIO (back hist)
-  setLoc <- performEvent $ ffor sSet $ \t -> do
-    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) t
-    getLocation' win
+
+  setLoc :: Event t () <- performEvent $ ffor sSet $ \t -> liftIO $ do
+    -- let newPath = 
+    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) (pBase <> from t)
+    -- path <- getLocation win >>= getPathname . fromJust
+    -- l <- getLocation win
+    -- return $ parsePath path
+
   newLocs <- getPopState
-  Route <$> holdDyn loc (leftmost [setLoc, newLocs])
+  let locVals = ffor newLocs $ \l ->
+        note "Bad path prefix" (T.stripPrefix pBase l) >>= to
+  Route <$> holdDyn pathVal0 (leftmost [Right <$> sSet, locVals])
+
+  where parsePath l = note "Bad path prefix" (T.stripPrefix pBase l) >>= to
+  -- Route <$> undefined
+-- #else
+-- route = error "route is only available to ghcjs"
+-- #endif
+
+note :: e -> Maybe a -> Either e a
+note _ (Just a) = Right a
+note e _        = Left e
+
+hush :: Either e a -> Maybe a
+hush (Right a) = Just a
+hush _         = Nothing
 
 webRoute
   :: (HasWebView m, MonadWidget t m, WR.PathInfo a)
-  -> RouteConfig t
+  => RouteConfig t a
   -> m (Route t a)
 webRoute = route (first T.pack . WR.fromPathInfo . T.encodeUtf8)
+                 (WR.toPathInfo)
+
+
+#if ghcjs_HOST_OS
 -- | Get the DOM window object.
 askDomWindow :: (HasWebView m, MonadIO m) => m Window
 askDomWindow = do
@@ -82,22 +116,55 @@ askDomWindow = do
   Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
   Just window <- liftIO $ DOM.getDefaultView doc
   return window
+#else
+askDomWindow :: (MonadIO m) => m Window
+askDomWindow = error "askDomWindow is only available to ghcjs"
+#endif
 
 getLocation' :: MonadIO m => Window -> m T.Text
+#if ghcjs_HOST_OS
 getLocation' w = toString . fromJust =<< liftIO (getLocation w)
+#else
+getLocation' = error "getLocation' is only available to ghcjs"
+#endif
 
 getPopState :: (MonadWidget t m) => m (Event t T.Text)
+-- #if ghcjs_HOST_OS
 getPopState = do
   window <- askDomWindow
-  wrapDomEventMaybe window (`DOM.on` popState) $ do
-    l <- getLocation window
+  wrapDomEventMaybe window (`on` popState) $ do
+    l <- liftIO $ getLocation window
     case l of
       Nothing -> return Nothing
-      Just loc -> do t <- toString loc; return (Just t)
+      Just loc -> liftIO $ Just <$> getPathname loc
+-- #else
+-- getPopState = error "getPopState is only available to ghcjs"
+-- #endif
 
+setWindowUrl :: MonadWidget t m => Event t T.Text -> m ()
+#if ghcjs_HOST_OS
+setWindowUrl url = do
+  performEvent_ $ ffor url $ \u -> do
+    win <- askDomWindow
+    Just hist <- liftIO $ getHistory win
+    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) u
+#else
+setWindowUrl = error "setWindowUrl only available to ghcjs"
+#endif
+
+getWindowInitUrl :: MonadWidget t m => m T.Text
+getWindowInitUrl = getLocation' =<< askDomWindow
+
+getWindowUrl :: MonadWidget t m => m (Dynamic t T.Text)
+getWindowUrl = do
+  win <- askDomWindow
+  loc <- getLocation' win
+  newLocs <- getPopState
+  holdDyn loc newLocs
 
 #if ghcjs_HOST_OS
 #else
+data Document
 data Location
 data Window
 data JSVal
@@ -118,6 +185,9 @@ class FromJSVal a where
 getLocation :: Window -> IO (Maybe Location)
 getLocation = undefined
 
+getPathname :: Location -> IO T.Text
+getPathname = undefined
+
 getHistory :: Window -> IO (Maybe History)
 getHistory = undefined
 
@@ -127,7 +197,16 @@ getState = undefined
 toString :: Location -> IO T.Text
 toString = undefined
 
+getDefaultView :: Document -> IO (Maybe Window)
 getDefaultView = undefined
 
+pushState :: History -> JSVal -> T.Text -> T.Text -> IO ()
 pushState = undefined
+
+popState = undefined
+
+pToJSVal :: Int -> JSVal
+pToJSVal = undefined
+
+on = undefined
 #endif
