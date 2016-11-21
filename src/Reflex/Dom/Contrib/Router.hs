@@ -14,9 +14,14 @@ module Reflex.Dom.Contrib.Router where
 
 ------------------------------------------------------------------------------
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Data.Bifunctor
+import qualified Data.ByteString.Char8     as BS
+import qualified Data.ByteString.Lazy      as BSL
 import           Data.Maybe                (fromJust)
 import qualified Data.Text                 as T
+import qualified Data.Text.Encoding        as T
 import           Reflex.Dom                hiding (Window)
+import qualified Web.Routes.PathInfo       as WR
 #if ghcjs_HOST_OS
 import           GHCJS.DOM.History         (back, forward, pushState)
 import           GHCJS.DOM.Window          (getLocation, popState)
@@ -31,24 +36,28 @@ import qualified GHCJS.DOM.EventM          as DOM
 #endif
 
 ------------------------------------------------------------------------------
-data RouteConfig t = RouteConfig
+data RouteConfig t a = RouteConfig
   { _routeConfig_forward   :: Event t () -- ^ Move the browser history forward
   , _routeConfig_back      :: Event t () -- ^ Move the browser history back
-  , _routeConfig_pushState :: Event t T.Text -- ^ Push to the URL state
+  , _routeConfig_pushState :: Event t a  -- ^ Push to the URL state
   -- , _routeConfig_pathBase  :: T.Text
   --   -- ^ The part of the URL not related to SPA routing
   }
 
-data Route t = Route {
-    _route_value :: Dynamic t T.Text -- ^ URL value
+data Route t a = Route {
+    _route_value :: Dynamic t (Either T.Text a) -- ^ URL value
   }
 
-instance HasValue (Route t) where
-  type Value (Route t) = Dynamic t T.Text
+instance HasValue (Route t a) where
+  type Value (Route t a) = Dynamic t (Either T.Text a)
   value = _route_value
 
 -- | Manipulate and track the URL text for dynamic routing of a widget
-route :: (HasWebView m, MonadWidget t m) => RouteConfig t -> m (Route t)
+route :: (HasWebView m, MonadWidget t m)
+  => (T.Text -> Either T.Text a)
+  -> (a -> T.Text)
+  -> RouteConfig t
+  -> m (Route t a)
 route (RouteConfig goForward goBack sSet) = do
   win <- askDomWindow
   loc <- getLocation' win
@@ -61,6 +70,11 @@ route (RouteConfig goForward goBack sSet) = do
   newLocs <- getPopState
   Route <$> holdDyn loc (leftmost [setLoc, newLocs])
 
+webRoute
+  :: (HasWebView m, MonadWidget t m, WR.PathInfo a)
+  -> RouteConfig t
+  -> m (Route t a)
+webRoute = route (first T.pack . WR.fromPathInfo . T.encodeUtf8)
 -- | Get the DOM window object.
 askDomWindow :: (HasWebView m, MonadIO m) => m Window
 askDomWindow = do
