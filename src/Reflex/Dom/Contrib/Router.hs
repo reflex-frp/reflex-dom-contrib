@@ -15,7 +15,7 @@ module Reflex.Dom.Contrib.Router where
 ------------------------------------------------------------------------------
 import           Control.Monad.IO.Class    (MonadIO)
 import           Data.Default
-import qualified Data.Text                 as T
+import           Data.Text                 (Text)
 import           Reflex.Dom                hiding (Window)
 #if ghcjs_HOST_OS
 import           Data.Maybe                (fromJust)
@@ -35,20 +35,29 @@ import           GHCJS.Marshal.Pure
 data RouteConfig t = RouteConfig
   { _routeConfig_forward   :: Event t () -- ^ Move the browser history forward
   , _routeConfig_back      :: Event t () -- ^ Move the browser history back
-  , _routeConfig_pushState :: Event t T.Text -- ^ Push to the URL state
-  -- , _routeConfig_pathBase  :: T.Text
+  , _routeConfig_pushState :: Event t Text -- ^ Push to the URL state
+  -- , _routeConfig_pathBase  :: Text
   --   -- ^ The part of the URL not related to SPA routing
   }
 
 instance Reflex t => Default (RouteConfig t) where
   def = RouteConfig never never never
 
+instance Reflex t => Monoid (RouteConfig t) where
+  mempty = def
+  mappend (RouteConfig f1 b1 p1) (RouteConfig f2 b2 p2) =
+    RouteConfig (leftmost [f1, f2]) (leftmost [b1, b2]) (leftmost [p1, p2])
+  mconcat rcs =
+    RouteConfig (leftmost $ map _routeConfig_forward rcs)
+                (leftmost $ map _routeConfig_back rcs)
+                (leftmost $ map _routeConfig_pushState rcs)
+
 data Route t = Route {
-    _route_value :: Dynamic t T.Text -- ^ URL value
+    _route_value :: Dynamic t Text -- ^ URL value
   }
 
 instance HasValue (Route t) where
-  type Value (Route t) = Dynamic t T.Text
+  type Value (Route t) = Dynamic t Text
   value = _route_value
 
 -- | Manipulate and track the URL text for dynamic routing of a widget
@@ -61,7 +70,7 @@ route (RouteConfig goForward goBack sSet) = do
   performEvent_ $ ffor goForward $ \_ -> liftIO (forward hist)
   performEvent_ $ ffor goBack    $ \_ -> liftIO (back hist)
   setLoc <- performEvent $ ffor sSet $ \t -> do
-    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) t
+    pushState hist (pToJSVal (0 :: Int)) ("" :: Text) t
     getLocation' win
   newLocs <- getPopState
   Route <$> holdDyn loc (leftmost [setLoc, newLocs])
@@ -82,14 +91,14 @@ askDomWindow :: (MonadIO m) => m Window
 askDomWindow = error "askDomWindow is only available to ghcjs"
 #endif
 
-getLocation' :: MonadIO m => Window -> m T.Text
+getLocation' :: MonadIO m => Window -> m Text
 #if ghcjs_HOST_OS
 getLocation' w = toString . fromJust =<< liftIO (getLocation w)
 #else
 getLocation' = error "getLocation' is only available to ghcjs"
 #endif
 
-getPopState :: (MonadWidget t m) => m (Event t T.Text)
+getPopState :: (MonadWidget t m) => m (Event t Text)
 #if ghcjs_HOST_OS
 getPopState = do
   window <- askDomWindow
@@ -102,21 +111,21 @@ getPopState = do
 getPopState = error "getPopState is only available to ghcjs"
 #endif
 
-setWindowUrl :: MonadWidget t m => Event t T.Text -> m ()
+setWindowUrl :: MonadWidget t m => Event t Text -> m ()
 #if ghcjs_HOST_OS
 setWindowUrl url = do
   performEvent_ $ ffor url $ \u -> do
     win <- askDomWindow
     Just hist <- liftIO $ getHistory win
-    pushState hist (pToJSVal (0 :: Int)) ("" :: T.Text) u
+    pushState hist (pToJSVal (0 :: Int)) ("" :: Text) u
 #else
 setWindowUrl = error "setWindowUrl only available to ghcjs"
 #endif
 
-getWindowInitUrl :: MonadWidget t m => m T.Text
+getWindowInitUrl :: MonadWidget t m => m Text
 getWindowInitUrl = getLocation' =<< askDomWindow
 
-getWindowUrl :: MonadWidget t m => m (Dynamic t T.Text)
+getWindowUrl :: MonadWidget t m => m (Dynamic t Text)
 getWindowUrl = do
   win <- askDomWindow
   loc <- getLocation' win
@@ -152,13 +161,13 @@ getHistory = undefined
 getState :: History -> IO (Maybe SerializedScriptValue)
 getState = undefined
 
-toString :: Location -> IO T.Text
+toString :: Location -> IO Text
 toString = undefined
 
 getDefaultView :: Document -> IO (Maybe Window)
 getDefaultView = undefined
 
-pushState :: History -> JSVal -> T.Text -> T.Text -> IO ()
+pushState :: History -> JSVal -> Text -> Text -> IO ()
 pushState = undefined
 
 
