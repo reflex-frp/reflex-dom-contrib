@@ -46,11 +46,11 @@ instance Reflex t => Default (RouteConfig t) where
 instance Reflex t => Monoid (RouteConfig t) where
   mempty = def
   mappend (RouteConfig f1 b1 p1) (RouteConfig f2 b2 p2) =
-    RouteConfig (leftmost [f1, f2]) (leftmost [b1, b2]) (leftmost [p1, p2])
+    RouteConfig (mappend f1 f2) (mappend b1 b2) (mappend p1 p2)
   mconcat rcs =
-    RouteConfig (leftmost $ map _routeConfig_forward rcs)
-                (leftmost $ map _routeConfig_back rcs)
-                (leftmost $ map _routeConfig_pushState rcs)
+    RouteConfig (mconcat $ map _routeConfig_forward rcs)
+                (mconcat $ map _routeConfig_back rcs)
+                (mconcat $ map _routeConfig_pushState rcs)
 
 data Route t = Route {
     _route_value :: Dynamic t Text -- ^ URL value
