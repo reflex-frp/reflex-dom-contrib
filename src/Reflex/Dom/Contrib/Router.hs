@@ -70,6 +70,17 @@ makeLenses ''RouteConfig
 instance Reflex t => Default (RouteConfig t a) where
   def = RouteConfig never never never ""
 
+
+instance Reflex t => Monoid (RouteConfig t a) where
+  mempty = def
+  mappend (RouteConfig f1 b1 p1 pb1) (RouteConfig f2 b2 p2 pb2) =
+    RouteConfig (mappend f1 f2) (mappend b1 b2) (leftmost [p1, p2]) pb12
+    where pb12 =
+            if pb1 `T.isPrefixOf` pb2 || pb2 `T.isPrefixOf` pb1
+            then (if T.length pb1 > T.length pb2 then pb1 else pb2)
+            else error
+                 "Tried to mappend RouteConfigs with conflicting base paths"
+
 data Route t a = Route {
     _route_value :: Dynamic t (Either T.Text a) -- ^ URL value
   }
