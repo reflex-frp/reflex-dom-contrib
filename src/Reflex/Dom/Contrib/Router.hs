@@ -49,7 +49,7 @@ import qualified GHCJS.DOM                 as DOM
 import qualified GHCJS.DOM.Document        as DOM
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (back, forward, pushState)
-import           GHCJS.DOM.Location        (getPathname, toString)
+import           GHCJS.DOM.Location        (getOrigin, getPathname, toString)
 import           GHCJS.DOM.Window          (Window, getHistory,
                                             getLocation, popState)
 import           GHCJS.Marshal.Pure
@@ -148,9 +148,15 @@ partialPathRoute pathBase = route decoder (return . (pathBase <>))
 -- | Route a single page app according to the full URI
 fullUriRoute
   :: MonadWidget t m
-  => RouteConfig t T.Text
+  => T.Text -- ^ Extra path part for return URIs
+  -> RouteConfig t T.Text
   -> m (Route t T.Text)
-fullUriRoute = route (fmap Right . toString) return
+fullUriRoute extraPath cfg = do
+  win <- askDomWindow
+  Just loc <- liftIO $ getLocation win
+  org <- liftIO $ getOrigin loc
+  let retUri r = org <> extraPath <> r
+  route (fmap Right . toString) (return . retUri) cfg
 
 
 #if ghcjs_HOST_OS
@@ -198,6 +204,9 @@ getLocation = undefined
 
 getPathname :: Location -> IO T.Text
 getPathname = undefined
+
+getOrigin :: Location -> IO T.Text
+getOrigin = undefined
 
 getHistory :: Window -> IO (Maybe History)
 getHistory = undefined
