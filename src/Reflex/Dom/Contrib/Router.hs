@@ -92,7 +92,7 @@ route
   => (Location -> IO (Either T.Text a))
      -- ^ Decode the part of the path beyond '_routeConfig_pathBase' into an a
   -> (a -> IO T.Text)
-     -- ^ Encode the routing value
+     -- ^ Encode the routing value to a Text that will be passed to `pushState`
   -> RouteConfig t a
     -- ^ Routing widget configuration
   -> m (Route t a)
@@ -146,17 +146,15 @@ partialPathRoute pathBase = route decoder (return . (pathBase <>))
 
 -------------------------------------------------------------------------------
 -- | Route a single page app according to the full URI
+--   The dynamic returned to you will be a Text of the full URI
+--   The route string you pass in will be forwarded as-is to
+--   pushState.
 fullUriRoute
   :: MonadWidget t m
-  => T.Text -- ^ Extra path part for return URIs
-  -> RouteConfig t T.Text
+  => RouteConfig t T.Text
   -> m (Route t T.Text)
-fullUriRoute extraPath cfg = do
-  win <- askDomWindow
-  Just loc <- liftIO $ getLocation win
-  org <- liftIO $ getOrigin loc
-  let retUri r = org <> extraPath <> r
-  route (fmap Right . toString) (return . retUri) cfg
+fullUriRoute cfg = do
+  route (fmap Right . toString) return cfg
 
 
 #if ghcjs_HOST_OS
