@@ -24,11 +24,14 @@ module Reflex.Dom.Contrib.Router (
   -- == Routing result
   , Route(..)
 
+  , uriOrigin
+
   -- == Lenses
   , routeConfig_forward
   , routeConfig_back
   , routeConfig_pushState
   , route_value
+  , route_fullURI
 
   ) where
 
@@ -37,19 +40,21 @@ import           Control.Lens              (makeLenses)
 import           Control.Monad.Except      (ExceptT(..), lift, runExceptT)
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import           Data.Bifunctor            (first)
+import           Data.Maybe                (fromMaybe)
 import           Data.Monoid               ((<>))
 import           Data.Default
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
 import           GHCJS.DOM.Types           (Location(..) )
 import           Reflex.Dom                hiding (EventName, Window)
+import qualified URI.ByteString            as U
 import qualified Web.Routes.PathInfo       as WR
 #if ghcjs_HOST_OS
 import qualified GHCJS.DOM                 as DOM
 import qualified GHCJS.DOM.Document        as DOM
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (back, forward, pushState)
-import           GHCJS.DOM.Location        (getOrigin, getPathname, toString)
+import           GHCJS.DOM.Location        (getPathname, toString)
 import           GHCJS.DOM.Window          (Window, getHistory,
                                             getLocation, popState)
 import           GHCJS.Marshal.Pure
@@ -77,7 +82,8 @@ instance Reflex t => Monoid (RouteConfig t a) where
 
 
 data Route t a = Route {
-    _route_value :: Dynamic t (Either T.Text a) -- ^ URL value
+    _route_value   :: Dynamic t (Either T.Text a)     -- ^ Routing value
+  , _route_fullURI :: Dynamic t (U.URIRef U.Absolute) -- ^ Full URI
   }
 
 makeLenses ''Route
@@ -86,7 +92,9 @@ instance HasValue (Route t a) where
   type Value (Route t a) = Dynamic t (Either T.Text a)
   value = _route_value
 
--- | Manipulate and track the URL 'GHCJS.DOM.Types.Location' for dynamic routing of a widget
+-------------------------------------------------------------------------------
+-- | Manipulate and track the URL 'GHCJS.DOM.Types.Location' for dynamic
+--   routing of a widget
 route
   :: (HasWebView m, MonadWidget t m)
   => (Location -> IO (Either T.Text a))
@@ -97,10 +105,11 @@ route
     -- ^ Routing widget configuration
   -> m (Route t a)
 route to from (RouteConfig goForward goBack sSet) = do
-  win <- askDomWindow
-  locVal0 <- liftIO $ getLocation win >>= \case
-    Nothing -> return $ Left  "No window Location"
-    Just l  -> to l
+  win     <- askDomWindow
+  loc0    <- liftIO $ windowURI win
+  locVal0 <- liftIO $ to =<< fmap (fromMaybe (error "No location"))
+                                  (getLocation win)
+
   Just hist <- liftIO $ getHistory win
   performEvent_ $ ffor goForward $ \_ -> liftIO (forward hist)
   performEvent_ $ ffor goBack    $ \_ -> liftIO (back hist)
@@ -111,8 +120,15 @@ route to from (RouteConfig goForward goBack sSet) = do
     dispatchEvent'
 
   locVals <- getPopState to
-  Route <$> holdDyn locVal0 (leftmost [Right <$> sSet, locVals])
+  locs <- performEvent $ ffor locVals $ \_ -> liftIO (windowURI win)
 
+  Route <$> holdDyn locVal0 (leftmost [Right <$> sSet, locVals]) <*> holdDyn loc0 locs
+
+
+windowURI :: Window -> IO (U.URIRef U.Absolute)
+windowURI w = do
+  l <- fromMaybe (error "Window has no location") <$> getLocation w
+  either (error "No parse of window location") id . U.parseURI U.laxURIParserOptions . T.encodeUtf8 <$> toString l
 
 -------------------------------------------------------------------------------
 -- | Route a single page app according to any 'WR.PathInfo' a => a
@@ -151,11 +167,24 @@ partialPathRoute pathBase = route decoder (return . (pathBase <>))
 --   pushState.
 fullUriRoute
   :: MonadWidget t m
-  => RouteConfig t T.Text
-  -> m (Route t T.Text)
+  => RouteConfig t (U.URIRef U.Absolute)
+  -> m (Route t (U.URIRef U.Absolute))
 fullUriRoute cfg = do
-  route (fmap Right . toString) return cfg
+  route uriDecoder (return . T.decodeUtf8 . U.serializeURIRef') cfg
+    where
+      uriDecoder = fmap (first (T.pack . show) .
+                         U.parseURI U.laxURIParserOptions .
+                         T.encodeUtf8) .
+                   toString
 
+
+uriOrigin :: U.URIRef U.Absolute -> T.Text
+uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
+  where
+    r' = r { U.uriPath = mempty
+           , U.uriQuery = mempty
+           , U.uriFragment = mempty
+           }
 
 #if ghcjs_HOST_OS
 -- | Get the DOM window object.
@@ -202,9 +231,6 @@ getLocation = undefined
 
 getPathname :: Location -> IO T.Text
 getPathname = undefined
-
-getOrigin :: Location -> IO T.Text
-getOrigin = undefined
 
 getHistory :: Window -> IO (Maybe History)
 getHistory = undefined
