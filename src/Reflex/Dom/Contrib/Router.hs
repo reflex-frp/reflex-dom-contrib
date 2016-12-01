@@ -33,6 +33,9 @@ module Reflex.Dom.Contrib.Router (
   , route_value
   , route_fullURI
 
+  -- = Low-level URL bar access
+  , getWindowUrlText
+  , getWindowLocation
   ) where
 
 ------------------------------------------------------------------------------
@@ -207,6 +210,23 @@ getPopState decodeLocation = do
     liftIO $ getLocation window >>= \case
       Nothing -> return Nothing
       Just l  -> Just <$> decodeLocation l
+
+
+-------------------------------------------------------------------------------
+-- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
+getWindowLocation :: MonadIO m => Window -> m Location
+#if ghcjs_HOST_OS
+getWindowLocation w = fromMaybe (error "Window has no Location") <$>
+  liftIO (getLocation w)
+#else
+getWindowLocation = error "getLocation' is only available to ghcjs"
+#endif
+
+
+-------------------------------------------------------------------------------
+-- | (Unsafely) get the URL text of a window
+getWindowUrlText :: MonadIO m => Window -> m T.Text
+getWindowUrlText w = getWindowLocation w >>= liftIO . toString
 
 
 #if ghcjs_HOST_OS
