@@ -16,7 +16,6 @@ module Reflex.Dom.Contrib.Router (
     route
   , route'
   , partialPathRoute
-  , routeSite
 
   -- = Low-level URL bar access
   , getLoc
@@ -34,7 +33,6 @@ module Reflex.Dom.Contrib.Router (
 import           Control.Lens              ((&), (.~), (^.))
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
 import qualified Data.ByteString.Char8     as BS
-import qualified Data.List                 as L
 import           Data.Monoid               ((<>))
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
@@ -103,25 +101,32 @@ route' encode decode routeUpdate = do
 --   pathBase
 partialPathRoute
   :: forall t m. MonadWidget t m
-  => [T.Text]  -- ^ The path segments not related to SPA routing
-  -> Event t [T.Text] -- ^ Updates to the path segments used for routing
+  => T.Text  -- ^ The path segments not related to SPA routing
+             --   (leading '/' will be added automaticaly)
+  -> Event t T.Text -- ^ Updates to the path segments used for routing
+                    --   These values will be appended to the base path
   -> m (Dynamic t [T.Text]) -- ^ Path segments used for routing
 partialPathRoute pathBase pathUpdates = do
   route' (flip updateUrl) parseParts pathUpdates
   where
 
-    toPath :: [T.Text] -> BS.ByteString
-    toPath parts =
-      "/" <> BS.intercalate "/" (T.encodeUtf8 <$> (pathBase <> parts))
+    toPath :: T.Text -> BS.ByteString
+    toPath dynpath = T.encodeUtf8 $
+      "/" <> cleanT pathBase <>
+      "/" <> cleanT dynpath
 
-    updateUrl :: [T.Text] -> URI -> URI
+    updateUrl :: T.Text -> URI -> URI
     updateUrl updateParts u = u & U.pathL .~ toPath updateParts
 
     parseParts :: URI -> [T.Text]
     parseParts u =
-      maybe (error . T.unpack $ pfxErr u pathBase) (map T.decodeUtf8) .
-      L.stripPrefix (T.encodeUtf8 <$> pathBase) .
-      BS.split '/' . BS.drop 1 $ u ^. U.pathL
+      maybe (error $ pfxErr u pathBase)
+            (T.splitOn "/" . T.decodeUtf8 . cleanB) .
+      BS.stripPrefix (T.encodeUtf8 $ cleanT pathBase) $
+      cleanB (u ^. U.pathL)
+
+    cleanT = T.dropWhile (=='/')
+    cleanB = BS.dropWhile (== '/')
 
 
 -------------------------------------------------------------------------------
@@ -206,40 +211,6 @@ getURI = do
     U.parseURI U.laxURIParserOptions $ T.encodeUtf8 l
 
 
-------------------------------------------------------------------------------
--- | Handles routing for a site.  The argument to this function is a widget
--- function with the effective type signature `String -> m (Event t String)`.
--- The String parameter is the initial value of the window location pathname.
--- The return value is an event that updates the window location.
-routeSite
-    :: (forall t m. MonadWidget t m => T.Text -> m (Event t T.Text))
-    -> IO ()
-#if ghcjs_HOST_OS
-routeSite siteFunc = runWebGUI $ \webView -> do
-    w <- waitUntilJust currentWindow
-    path <- getWindowLocation w
-    --setupHistoryHandler w (\arg -> putStrLn $ "ghcjs history handling!  " ++ arg)
-    --wrapDomEvent w domWindowOnpopstate myGetEvent
-    doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
-             webViewGetDomDocument webView
-    body <- waitUntilJust $ getBody doc
-    attachWidget body (WebViewSingleton webView) $ do
-      changes <- siteFunc (path)
-      -- setUrl $ T.unpack <$> changes
-      performEvent_ $ ffor changes $ \url -> liftIO (windowHistoryPushState (T.unpack url))
-      return ()
-#else
-routeSite _ = error "routeSite: only works in GHCJS"
-#endif
-
-#if ghcjs_HOST_OS
-getWindowLocation :: Window -> IO T.Text
-getWindowLocation w = do
-  Just loc <- getLocation w
-  getPathname loc
-#endif
-
-
 #if ghcjs_HOST_OS
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w.dispatchEvent(e);"
   dispatchEvent' :: IO ()
@@ -285,10 +256,14 @@ toString = undefined
 #endif
 
 
+-------------------------------------------------------------------------------
 hush :: Either e a -> Maybe a
 hush (Right a) = Just a
 hush _ = Nothing
 
-pfxErr :: URI -> [T.Text] -> T.Text
-pfxErr pn pathBase = "Encountered path (" <> T.decodeUtf8 (U.serializeURIRef' pn)
-            <> ") without expected prefix (" <> T.intercalate "/" pathBase <> ")"
+
+-------------------------------------------------------------------------------
+pfxErr :: URI -> T.Text -> String
+pfxErr pn pathBase =
+  T.unpack $ "Encountered path (" <> T.decodeUtf8 (U.serializeURIRef' pn)
+            <> ") without expected prefix (" <> pathBase <> ")"
