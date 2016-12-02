@@ -29,15 +29,10 @@ module Reflex.Dom.Contrib.Router (
 
 ------------------------------------------------------------------------------
 import           Control.Lens              ((&), (.~), (^.))
--- import           Control.Monad             ((<=<))
--- import           Control.Monad.Except      (ExceptT(..), lift, runExceptT)
 import           Control.Monad.IO.Class    (MonadIO, liftIO)
--- import           Data.Bifunctor            (first)
 import qualified Data.ByteString.Char8     as BS
--- import           Data.Maybe                (fromJust, fromMaybe)
 import qualified Data.List                 as L
 import           Data.Monoid               ((<>))
--- import           Data.Default
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
 import           GHCJS.DOM.Types           (Location(..) )
@@ -57,7 +52,6 @@ import           Control.Monad.Reader      (ReaderT)
 #endif
 
 
-type URI = U.URIRef U.Absolute
 
 
 -------------------------------------------------------------------------------
@@ -178,7 +172,6 @@ withHistory act = do
   liftIO $ act h
 
 
-
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
 getLoc :: (HasWebView m, MonadIO m) => m Location
@@ -197,6 +190,11 @@ getUrlText :: (HasWebView m, MonadIO m) => m T.Text
 getUrlText = getLoc >>= liftIO . toString
 
 
+-------------------------------------------------------------------------------
+type URI = U.URIRef U.Absolute
+
+
+-------------------------------------------------------------------------------
 getURI :: (HasWebView m, MonadIO m) => m URI
 getURI = do
   l <- getUrlText
