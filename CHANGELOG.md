@@ -1,3 +1,7 @@
+# 0.5
+
+* Add route, fullUriRoute, partialPathRoute
+
 # 0.4.2
 
 * Add DynamicList widget
