@@ -20,8 +20,10 @@ module Reflex.Dom.Contrib.Router (
 
   -- = Low-level URL bar access
   , getLoc
+  , getURI
   , getUrlText
   , uriOrigin
+  , URI
 
   -- = History movement
   , goForward
