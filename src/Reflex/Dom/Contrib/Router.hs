@@ -76,16 +76,12 @@ route
   -> m (Dynamic t (U.URIRef U.Absolute))
 route pushTo = do
   loc0    <- getURI
+
   _ <- performEvent $ ffor pushTo $ \t -> do
     withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) t
     liftIO dispatchEvent'
 
   locUpdates <- getPopState
-
-  -- Route <$> holdDyn locVal0 (leftmost [sSet, locUpdates]) <*> holdDyn loc0 locs
-  -- Because we trigger a popState manually, there is no more need to use the
-  -- sSet events to update the dynamic uri
-  -- TODO make sure this actually works on all the expected URL bar update sources
   holdDyn loc0 locUpdates
 
 route'
@@ -241,19 +237,6 @@ getWindowLocation w = do
   getPathname loc
 #endif
 
--- ------------------------------------------------------------------------------
--- getWindowLocation :: Window -> IO T.Text
--- #ifdef ghcjs_HOST_OS
--- getWindowLocation w = do
---     liftM fromJSString $ js_windowLocationPathname (unWindow w)
-
--- foreign import javascript unsafe
---   "$1['location']['pathname']"
---   js_windowLocationPathname :: JSVal -> IO JSVal
--- #else
--- getWindowLocation =
---     error "getWindowLocation: only works in GHCJS"
--- #endif
 
 #if ghcjs_HOST_OS
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w.dispatchEvent(e);"
