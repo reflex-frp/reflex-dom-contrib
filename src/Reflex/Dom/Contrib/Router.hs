@@ -16,6 +16,7 @@ module Reflex.Dom.Contrib.Router (
     route
   , route'
   , partialPathRoute
+  , routeSite
 
   -- = Low-level URL bar access
   , getLoc
@@ -35,22 +36,27 @@ import qualified Data.List                 as L
 import           Data.Monoid               ((<>))
 import qualified Data.Text                 as T
 import qualified Data.Text.Encoding        as T
-import           GHCJS.DOM.Types           (Location(..) )
+import           GHCJS.DOM.Types           (Location(..))
 import           Reflex.Dom                hiding (EventName, Window)
 import qualified URI.ByteString            as U
 #if ghcjs_HOST_OS
+import           Control.Monad             (liftM)
 import qualified GHCJS.DOM                 as DOM
-import qualified GHCJS.DOM.Document        as DOM
+import           GHCJS.DOM                 (currentWindow,
+                                            runWebGUI, webViewGetDomDocument)
+import           GHCJS.DOM.Document        (getDefaultView, getBody)
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (History, back, forward, pushState)
-import           GHCJS.DOM.Location        (toString)
+import           GHCJS.DOM.Location        (getPathname, toString)
+import           GHCJS.DOM.Types           (castToHTMLDocument)
 import           GHCJS.DOM.Window          (Window, getHistory,
                                             getLocation, popState)
 import           GHCJS.Marshal.Pure
+import           GHCJS.Prim                (JSVal)
+import           Reflex.Dom.Contrib.Utils
 #else
 import           Control.Monad.Reader      (ReaderT)
 #endif
-
 
 
 
@@ -137,7 +143,7 @@ askDomWindow :: (HasWebView m, MonadIO m) => m Window
 askDomWindow = do
   wv <- askWebView
   Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
-  Just window <- liftIO $ DOM.getDefaultView doc
+  Just window <- liftIO $ getDefaultView doc
   return window
 #else
 askDomWindow :: (MonadIO m) => m Window
@@ -201,6 +207,53 @@ getURI = do
   return $ either (error "No parse of window location") id .
     U.parseURI U.laxURIParserOptions $ T.encodeUtf8 l
 
+
+------------------------------------------------------------------------------
+-- | Handles routing for a site.  The argument to this function is a widget
+-- function with the effective type signature `String -> m (Event t String)`.
+-- The String parameter is the initial value of the window location pathname.
+-- The return value is an event that updates the window location.
+routeSite
+    :: (forall t m. MonadWidget t m => T.Text -> m (Event t T.Text))
+    -> IO ()
+#if ghcjs_HOST_OS
+routeSite siteFunc = runWebGUI $ \webView -> do
+    w <- waitUntilJust currentWindow
+    path <- getWindowLocation w
+    --setupHistoryHandler w (\arg -> putStrLn $ "ghcjs history handling!  " ++ arg)
+    --wrapDomEvent w domWindowOnpopstate myGetEvent
+    doc <- waitUntilJust $ liftM (fmap castToHTMLDocument) $
+             webViewGetDomDocument webView
+    body <- waitUntilJust $ getBody doc
+    attachWidget body (WebViewSingleton webView) $ do
+      changes <- siteFunc (path)
+      -- setUrl $ T.unpack <$> changes
+      performEvent_ $ ffor changes $ \url -> liftIO (windowHistoryPushState (T.unpack url))
+      return ()
+#else
+routeSite _ = error "routeSite: only works in GHCJS"
+#endif
+
+#if ghcjs_HOST_OS
+getWindowLocation :: Window -> IO T.Text
+getWindowLocation w = do
+  Just loc <- getLocation w
+  getPathname loc
+#endif
+
+-- ------------------------------------------------------------------------------
+-- getWindowLocation :: Window -> IO T.Text
+-- #ifdef ghcjs_HOST_OS
+-- getWindowLocation w = do
+--     liftM fromJSString $ js_windowLocationPathname (unWindow w)
+
+-- foreign import javascript unsafe
+--   "$1['location']['pathname']"
+--   js_windowLocationPathname :: JSVal -> IO JSVal
+-- #else
+-- getWindowLocation =
+--     error "getWindowLocation: only works in GHCJS"
+-- #endif
 
 #if ghcjs_HOST_OS
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w.dispatchEvent(e);"
