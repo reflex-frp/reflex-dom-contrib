@@ -22,12 +22,11 @@
 , transformers
 , uri-bytestring
 , webkitgtk3-javascriptcore
-, web-routes
 }:
 
 mkDerivation {
   pname = "reflex-dom-contrib";
-  version = "0.5.1";
+  version = "0.5";
   src = builtins.filterSource (path: type: baseNameOf path != ".git") ./.;
   buildDepends = [
     aeson
@@ -51,7 +50,6 @@ mkDerivation {
     time
     transformers
     uri-bytestring
-    web-routes
   ];
   license = null;
 }

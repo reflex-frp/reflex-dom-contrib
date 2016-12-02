@@ -1,10 +1,6 @@
-# 0.5.1
-
-* Add Monoid instance for RouteConfig
-
 # 0.5
 
-* Add Route, webRoute, textRoute
+* Add route, fullUriRoute, partialPathRoute
 
 # 0.4.2
 

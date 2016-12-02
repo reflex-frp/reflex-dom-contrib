@@ -13,8 +13,7 @@
 
 module Reflex.Dom.Contrib.Router (
   -- == High-level routers
-    webRoute
-  , partialPathRoute
+    partialPathRoute
   , fullUriRoute
   , route
 
@@ -82,7 +81,10 @@ instance Reflex t => Monoid (RouteConfig t a) where
   mempty = def
   mappend (RouteConfig f1 b1 p1) (RouteConfig f2 b2 p2) =
     RouteConfig (mappend f1 f2) (mappend b1 b2) (leftmost [p1, p2])
-
+  mconcat rcs =
+    RouteConfig (mconcat $ map _routeConfig_forward rcs)
+                (mconcat $ map _routeConfig_back rcs)
+                (leftmost $ map _routeConfig_pushState rcs)
 
 data Route t a = Route {
     _route_value   :: Dynamic t (Either T.Text a)     -- ^ Routing value
