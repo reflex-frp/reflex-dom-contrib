@@ -167,15 +167,15 @@ radioGroup dynName dynEntryList cfg = do
      <> bool mempty ("checked" =: "checked") chkd
     handleOne _ dynV dynChecked = do
 
-      el "tr" $ do
+      el "tr" $ el "td" $ el "label" $  do
         let txt = zipDynWith (\v m -> fromMaybe "" $ Prelude.lookup v m)
                              dynV dynEntryList
 
             btnAttrs = mkBtnAttrs <$> dynName <*> dynChecked
-        (b,_) <- el "td" $ elDynAttr' "input" btnAttrs $ return ()
+        (b,_) <- elDynAttr' "input" btnAttrs $ return ()
         f <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                       , True  <$ (Focus `domEvent` b)]
-        el "td" $ dynText txt
+        el "text" $ dynText txt
         let e = castToHTMLInputElement $ _element_raw b
         _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)
