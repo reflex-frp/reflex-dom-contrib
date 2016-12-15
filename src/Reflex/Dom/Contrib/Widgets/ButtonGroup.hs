@@ -175,7 +175,7 @@ radioGroup dynName dynEntryList cfg = do
         (b,_) <- elDynAttr' "input" btnAttrs $ return ()
         f <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                       , True  <$ (Focus `domEvent` b)]
-        el "text" $ dynText txt
+        dynText txt
         let e = castToHTMLInputElement $ _element_raw b
         _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)
