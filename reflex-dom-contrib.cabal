@@ -35,7 +35,7 @@ library
 --    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Time
     Reflex.Dom.Contrib.Utils
-    Reflex.Dom.Contrib.Xhr
+--    Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
     Reflex.Dom.Contrib.Widgets.ButtonGroup
     Reflex.Dom.Contrib.Widgets.CheckboxList
