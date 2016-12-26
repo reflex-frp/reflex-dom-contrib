@@ -31,7 +31,7 @@ library
     Reflex.Contrib.Interfaces
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
-    Reflex.Dom.Contrib.Pagination
+--    Reflex.Dom.Contrib.Pagination
 --    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Time
     Reflex.Dom.Contrib.Utils
