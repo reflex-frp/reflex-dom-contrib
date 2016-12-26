@@ -1,6 +1,6 @@
 name:                reflex-dom-contrib
-version:             0.4.2
-synopsis:            A playground for experimenting with infrastructure and common code for reflex applications
+version:             0.5
+synopsis:            A place to experiment with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
                      libraries for reflex FRP applications. This library is
@@ -31,11 +31,10 @@ library
     Reflex.Contrib.Interfaces
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
---    Reflex.Dom.Contrib.Pagination
+    Reflex.Dom.Contrib.Pagination
 --    Reflex.Dom.Contrib.Router
-    Reflex.Dom.Contrib.Time
     Reflex.Dom.Contrib.Utils
---    Reflex.Dom.Contrib.Xhr
+    Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
     Reflex.Dom.Contrib.Widgets.ButtonGroup
     Reflex.Dom.Contrib.Widgets.CheckboxList
@@ -51,6 +50,7 @@ library
 --     Reflex.Dom.Contrib.Geoposition
 
   build-depends:
+<<<<<<< HEAD
     aeson        >= 0.8  && < 0.12,
     base         >= 4.6  && < 4.10,
     bifunctors   >= 4.0  && < 5.4,
@@ -70,10 +70,33 @@ library
     text         >= 1.2  && < 1.3,
     time         >= 1.5  && < 1.7,
     transformers >= 0.4  && < 0.6
+=======
+    aeson             >= 0.8  && < 1.1,
+    base              >= 4.6  && < 4.10,
+    bifunctors        >= 4.0  && < 5.5,
+    bytestring        >= 0.10 && < 0.11,
+    base64-bytestring >= 1.0  && < 1.1,
+    containers        >= 0.5  && < 0.6,
+    data-default      >= 0.5  && < 0.8,
+    ghcjs-dom         >= 0.2  && < 0.3,
+    http-types        >= 0.8  && < 0.10,
+    lens              >= 4.9  && < 4.15,
+    mtl               >= 2.0  && < 2.3,
+    random            >= 1.0  && < 1.2,
+    readable          >= 0.3  && < 0.4,
+    reflex            >= 0.5  && < 0.6,
+    reflex-dom        >= 0.4  && < 0.5,
+    safe              >= 0.3  && < 0.4,
+    string-conv       >= 0.1  && < 0.2,
+    text              >= 1.2  && < 1.3,
+    time              >= 1.5  && < 1.7,
+    transformers      >= 0.4  && < 0.6,
+    uri-bytestring    >= 0.2  && < 0.3
+>>>>>>> 86e1a657862183dc76ad02d04bd87365ac4b16b6
 
   if impl(ghcjs)
     build-depends:
-                  ghcjs-base   >= 0.2  && < 0.3,
+                  ghcjs-base >= 0.2 && < 0.3,
                   ghcjs-prim >= 0.1 && < 0.2
 
   default-language:    Haskell2010

@@ -48,11 +48,11 @@ partitionEvent f e = ( fmapMaybe (\(b, x) -> if b then Just x else Nothing) e'
 -- field.  This function collapses the two levels of Dynamic Event into just
 -- an Event.
 extractEvent
-    :: (Reflex t, MonadHold t m)
+    :: Reflex t
     => (a -> Event t b)
     -> Dynamic t a
-    -> m (Event t b)
-extractEvent f = liftM (switch . current) . mapDyn f
+    -> (Event t b)
+extractEvent f = switch . current . fmap f
 
 
 ------------------------------------------------------------------------------
@@ -60,22 +60,22 @@ extractEvent f = liftM (switch . current) . mapDyn f
 -- field.  This function collapses the two levels of Dynamic Dynamic into a
 -- single Dynamic.
 extractDyn
-    :: (Reflex t, MonadHold t m)
+    :: Reflex t
     => (a -> Dynamic t b)
     -> Dynamic t a
-    -> m (Dynamic t b)
-extractDyn f = liftM joinDyn . mapDyn f
+    -> Dynamic t b
+extractDyn f = join . fmap f
 
 
 ------------------------------------------------------------------------------
 -- | This function has the slight flaw that if (f initValue) == False, it will
 -- still get through.
 filterDyn
-    :: (MonadHold t m, Reflex t, Functor m)
+    :: (MonadHold t m, Reflex t)
     => (a -> Bool)
     -> Dynamic t a
     -> m (Dynamic t a)
-filterDyn f d = fmap joinDyn $ holdDyn d $ fmap constDyn $
+filterDyn f d = fmap join $ holdDyn d $ fmap constDyn $
     ffilter f (updated d)
 
 
@@ -83,13 +83,12 @@ filterDyn f d = fmap joinDyn $ holdDyn d $ fmap constDyn $
 -- | Similar to filterDyn, but here the initial value problem is visible
 -- because of the Maybe.
 fmapMaybeDyn
-    :: (MonadHold t m, Reflex t, Functor m)
+    :: (MonadHold t m, Reflex t)
     => (a -> Maybe b)
     -> Dynamic t a
     -> m (Dynamic t (Maybe b))
 fmapMaybeDyn f d = do
-    d' <- mapDyn f d
-    fmap joinDyn $ holdDyn d' $ fmap (constDyn . Just) $
+    fmap join $ holdDyn (f <$> d) $ fmap (constDyn . Just) $
       fmapMaybe f (updated d)
 
 

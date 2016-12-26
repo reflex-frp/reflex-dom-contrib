@@ -34,6 +34,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
+import           Data.Text (Text)
 import           Data.Time
 import           GHCJS.DOM.HTMLInputElement hiding (setValue)
 import           Reflex
@@ -41,13 +42,13 @@ import           Reflex.Dom
 import           Safe
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Utils
+import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 
 
 class HasChange a where
   type Change a :: *
   change :: a -> Change a
-
 
 
 ------------------------------------------------------------------------------
@@ -58,7 +59,7 @@ class HasChange a where
 data WidgetConfig t a
     = WidgetConfig { _widgetConfig_setValue :: Event t a
                    , _widgetConfig_initialValue :: a
-                   , _widgetConfig_attributes :: Dynamic t (Map String String)
+                   , _widgetConfig_attributes :: Dynamic t (Map Text Text)
                    }
 
 instance Reflex t => Functor (WidgetConfig t) where
@@ -74,7 +75,7 @@ instance (Reflex t, Default a) => Default (WidgetConfig t a) where
                      }
 
 instance HasAttributes (WidgetConfig t a) where
-  type Attrs (WidgetConfig t a) = Dynamic t (Map String String)
+  type Attrs (WidgetConfig t a) = Dynamic t (Map Text Text)
   attributes = widgetConfig_attributes
 
 instance HasSetValue (WidgetConfig t a) where
@@ -89,20 +90,20 @@ class IsWidget w where
 
   ----------------------------------------------------------------------------
   -- | We can't make a Functor instance until Dynamic gets a Functor instance.
-  mapWidget :: MonadWidget t m => (a -> b) -> w t a -> m (w t b)
+  mapWidget :: Reflex t => (a -> b) -> w t a -> w t b
 
 
-  combineWidgets :: MonadWidget t m => (a -> b -> c) -> w t a -> w t b -> m (w t c)
+  combineWidgets :: Reflex t => (a -> b -> c) -> w t a -> w t b -> w t c
 
   ----------------------------------------------------------------------------
   -- | Combines multiple widgets over a Monoid operation.
-  wconcat :: (MonadWidget t m, Foldable f, Monoid a) => f (w t a) -> m (w t a)
-  wconcat = foldM (combineWidgets (<>)) (constWidget mempty)
+  wconcat :: (Reflex t, Foldable f, Monoid a) => f (w t a) -> w t a
+  wconcat = foldl (combineWidgets (<>)) (constWidget mempty)
 
   ----------------------------------------------------------------------------
   -- | Since widgets contain Dynamics and Events inside them, we can pull
   -- Dynamic widgets out of the Dynamic.
-  extractWidget :: MonadWidget t m => Dynamic t (w t a) -> m (w t a)
+  extractWidget :: Reflex t => Dynamic t (w t a) -> w t a
 
 
 ------------------------------------------------------------------------------
@@ -117,6 +118,8 @@ data Widget0 t a = Widget0
 
 makeLenses ''Widget0
 
+instance Reflex t => Functor (Widget0 t) where
+  fmap f (Widget0 v c) = Widget0 (f <$> v) (f <$> c)
 
 instance HasValue (Widget0 t a) where
   type Value (Widget0 t a) = Dynamic t a
@@ -130,18 +133,16 @@ instance HasChange (Widget0 t a) where
 
 instance IsWidget Widget0 where
   constWidget a = Widget0 (constDyn a) never
-  mapWidget f w = do
-    b <- mapDyn f $ value w
-    return $ Widget0 b (f <$> _widget0_change w)
-  combineWidgets f a b = do
-    c <- combineDyn f (value a) (value b)
-    let cChange = tagDyn c $ leftmost
-          [() <$ _widget0_change a, () <$ _widget0_change b]
-    return $ Widget0 c cChange
-  extractWidget dw = do
-    v <- extractDyn value dw
-    c <- extractEvent _widget0_change dw
-    return $ Widget0 v c
+  mapWidget f w = Widget0 (f <$> value w) (f <$> _widget0_change w)
+  combineWidgets f a b = Widget0 c cChange
+    where
+      c = zipDynWith f (value a) (value b)
+      cChange = tagPromptlyDyn c $ leftmost
+        [() <$ _widget0_change a, () <$ _widget0_change b]
+  extractWidget dw = Widget0 v c
+    where
+      v = extractDyn value dw
+      c = extractEvent _widget0_change dw
 
 
 ------------------------------------------------------------------------------
@@ -182,34 +183,34 @@ type GWidget t m a = WidgetConfig t a -> m (HtmlWidget t a)
 
 instance IsWidget HtmlWidget where
   constWidget a = HtmlWidget (constDyn a) never never never never (constDyn False)
-  mapWidget f w = do
-      newVal <- mapDyn f $ value w
-      return $ HtmlWidget
-        newVal
+  mapWidget f w =
+      HtmlWidget
+        (f <$> value w)
         (f <$> _hwidget_change w)
         (_hwidget_keypress w)
         (_hwidget_keydown w)
         (_hwidget_keyup w)
         (_hwidget_hasFocus w)
-  combineWidgets f a b = do
-      newVal <- combineDyn f (value a) (value b)
-      let newChange = tagDyn newVal $ leftmost
-            [() <$ _hwidget_change a, () <$ _hwidget_change b]
-      newFocus <- combineDyn (||) (_hwidget_hasFocus a) (_hwidget_hasFocus b)
-      return $ HtmlWidget
+  combineWidgets f a b =
+      HtmlWidget
         newVal newChange
         (leftmost [_hwidget_keypress a, _hwidget_keypress b])
         (leftmost [_hwidget_keydown a, _hwidget_keydown b])
         (leftmost [_hwidget_keyup a, _hwidget_keyup b])
         newFocus
-  extractWidget dynWidget = do
-    v <- extractDyn value dynWidget
-    c <- extractEvent _hwidget_change dynWidget
-    kp <- extractEvent _hwidget_keypress dynWidget
-    kd <- extractEvent _hwidget_keydown dynWidget
-    ku <- extractEvent _hwidget_keyup dynWidget
-    hf <- extractDyn _hwidget_hasFocus dynWidget
-    return $ HtmlWidget v c kp kd ku hf
+    where
+      newVal = zipDynWith f (value a) (value b)
+      newChange = tagPromptlyDyn newVal $ leftmost
+        [() <$ _hwidget_change a, () <$ _hwidget_change b]
+      newFocus = zipDynWith (||) (_hwidget_hasFocus a) (_hwidget_hasFocus b)
+  extractWidget dynWidget = HtmlWidget v c kp kd ku hf
+    where
+      v = extractDyn value dynWidget
+      c = extractEvent _hwidget_change dynWidget
+      kp = extractEvent _hwidget_keypress dynWidget
+      kd = extractEvent _hwidget_keydown dynWidget
+      ku = extractEvent _hwidget_keyup dynWidget
+      hf = extractDyn _hwidget_hasFocus dynWidget
 
 
 ------------------------------------------------------------------------------
@@ -219,22 +220,20 @@ dateTimeWidget
     => GWidget t m (Maybe UTCTime)
 dateTimeWidget cfg = do
     let wValue = _widgetConfig_setValue cfg
-        setDate = maybe "" (formatTime defaultTimeLocale dfmt)
-        setTime = maybe "" (formatTime defaultTimeLocale tfmt)
+        setDate = maybe mempty (toS . formatTime defaultTimeLocale dfmt)
+        setTime = maybe mempty (toS . formatTime defaultTimeLocale tfmt)
     el "div" $ do
-        di <- htmlTextInput "date" $ def
-          & setValue .~ (setDate <$> wValue)
-          & attributes .~ _widgetConfig_attributes cfg
-          & widgetConfig_initialValue .~ setDate
-              (_widgetConfig_initialValue cfg)
-        ti <- htmlTextInput "time" $ def
-          & setValue .~ (setTime <$> wValue)
-          & attributes .~ _widgetConfig_attributes cfg
-          & widgetConfig_initialValue .~ setTime
-              (_widgetConfig_initialValue cfg)
-        combineWidgets (\d t -> parseTimeM True defaultTimeLocale "%F %X" $
-                                  toS $ d ++ " " ++ t ++ ":00")
-          di ti
+        di <- htmlTextInput "date" $ WidgetConfig
+          (setDate <$> wValue)
+          (setDate (_widgetConfig_initialValue cfg))
+          (_widgetConfig_attributes cfg)
+        ti <- htmlTextInput "time" $ WidgetConfig
+          (setTime <$> wValue)
+          (setTime (_widgetConfig_initialValue cfg))
+          (_widgetConfig_attributes cfg)
+        return $ combineWidgets
+                   (\d t -> parseTimeM True defaultTimeLocale "%F %X" $
+                            toS d ++ " " ++ toS t ++ ":00") di ti
   where
     dfmt = "%F"
     tfmt = "%X"
@@ -247,15 +246,13 @@ dateWidget
     => GWidget t m (Maybe Day)
 dateWidget cfg = do
     let setVal = showD <$> _widgetConfig_setValue cfg
-    di <- htmlTextInput "date" $ def
-      & setValue .~ setVal
-      & attributes .~ _widgetConfig_attributes cfg
-      & widgetConfig_initialValue .~ showD
-          (_widgetConfig_initialValue cfg)
-    mapWidget (parseTimeM True defaultTimeLocale fmt) di
+    di <- htmlTextInput "date" $ WidgetConfig
+      setVal (showD (_widgetConfig_initialValue cfg))
+      (_widgetConfig_attributes cfg)
+    return $ mapWidget (parseTimeM True defaultTimeLocale fmt . toS) di
   where
     fmt = "%F"
-    showD = maybe "" (formatTime defaultTimeLocale fmt)
+    showD = maybe "" (toS . formatTime defaultTimeLocale fmt)
 
 
 ------------------------------------------------------------------------------
@@ -267,19 +264,16 @@ htmlCheckbox cfg = do
     cb <- checkbox (_widgetConfig_initialValue cfg) $ def
       & setValue .~ _widgetConfig_setValue cfg
       & attributes .~ _widgetConfig_attributes cfg
-    return $ HtmlWidget
-      (_checkbox_value cb)
-      (_checkbox_change cb)
-      never never never
-      (constDyn False)
+    return $ HtmlWidget (_checkbox_value cb) never -- FIXME Wrong
+                        never never never (constDyn False)
 
 
 ------------------------------------------------------------------------------
 -- | HtmlWidget version of reflex-dom's textInput.
 htmlTextInput
     :: MonadWidget t m
-    => String
-    -> GWidget t m String
+    => Text
+    -> GWidget t m Text
 htmlTextInput inputType cfg = do
     (_,w) <- htmlTextInput' inputType cfg
     return w
@@ -290,9 +284,9 @@ htmlTextInput inputType cfg = do
 -- HTMLInputElement.
 htmlTextInput'
     :: MonadWidget t m
-    => String
-    -> WidgetConfig t String
-    -> m (HTMLInputElement, HtmlWidget t String)
+    => Text
+    -> WidgetConfig t Text
+    -> m (HTMLInputElement, HtmlWidget t Text)
 htmlTextInput' inputType cfg = do
     ti <- textInput $ def
       & setValue .~ _widgetConfig_setValue cfg
@@ -316,12 +310,12 @@ readableWidget
     :: (MonadWidget t m, Show a, Readable a)
     => GWidget t m (Maybe a)
 readableWidget cfg = do
-    let setVal = maybe "" show <$> _widgetConfig_setValue cfg
+    let setVal = maybe "" tshow <$> _widgetConfig_setValue cfg
     w <- htmlTextInput "text" $ WidgetConfig setVal
-      (maybe "" show (_widgetConfig_initialValue cfg))
+      (maybe "" tshow (_widgetConfig_initialValue cfg))
       (_widgetConfig_attributes cfg)
     let parse = fromText . toS
-    mapWidget parse w
+    return $ mapWidget parse w
 
 
 ------------------------------------------------------------------------------
@@ -348,20 +342,20 @@ intWidget = readableWidget
 htmlDropdown
     :: (MonadWidget t m, Eq b)
     => Dynamic t [a]
-    -> (a -> String)
+    -> (a -> Text)
     -> (a -> b)
     -> WidgetConfig t b
     -> m (Widget0 t b)
 htmlDropdown items f payload cfg = do
-    pairs <- mapDyn (zip [(0::Int)..]) items
-    m <- mapDyn M.fromList pairs
-    dynItems <- mapDyn (M.map f) m
-    let findIt ps a = maybe 0 fst $ headMay (filter (\ (_,x) -> payload x == a) ps)
-    let setVal = attachDynWith findIt pairs $ _widgetConfig_setValue cfg
+    let pairs = zip [(0::Int)..] <$> items
+        m = M.fromList <$> pairs
+        dynItems = M.map f <$> m
+        findIt ps a = maybe 0 fst $ headMay (filter (\ (_,x) -> payload x == a) ps)
+        setVal = attachPromptlyDynWith findIt pairs $ _widgetConfig_setValue cfg
     d <- dropdown 0 dynItems $
            DropdownConfig setVal (_widgetConfig_attributes cfg)
-    val <- combineDyn (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
-    return $ Widget0 val (tagDyn val $ _dropdown_change d)
+    let val = zipDynWith (\k x -> payload $ fromJust $ M.lookup k x) (_dropdown_value d) m
+    return $ Widget0 val (tagPromptlyDyn val $ _dropdown_change d)
 
 
 ------------------------------------------------------------------------------
@@ -379,7 +373,7 @@ htmlDropdown items f payload cfg = do
 htmlDropdownStatic
     :: (MonadWidget t m, Eq b)
     => [a]
-    -> (a -> String)
+    -> (a -> Text)
     -> (a -> b)
     -> WidgetConfig t b
     -> m (Widget0 t b)
@@ -391,8 +385,8 @@ htmlDropdownStatic items f payload cfg = do
     let setVal = findIt <$> _widgetConfig_setValue cfg
     d <- dropdown (findIt $ _widgetConfig_initialValue cfg) (constDyn dynItems) $
            DropdownConfig setVal (_widgetConfig_attributes cfg)
-    val <- mapDyn (\k -> payload $ fromJust $ M.lookup k m) (_dropdown_value d)
-    return $ Widget0 val (tagDyn val $ _dropdown_change d)
+    let val = (\k -> payload $ fromJust $ M.lookup k m) <$> _dropdown_value d
+    return $ Widget0 val (tagPromptlyDyn val $ _dropdown_change d)
 
 
 ------------------------------------------------------------------------------
@@ -402,7 +396,7 @@ blurOrEnter
     :: Reflex t
     => HtmlWidget t a
     -> Event t a
-blurOrEnter w = tagDyn (_hwidget_value w) fireEvent
+blurOrEnter w = tagPromptlyDyn (_hwidget_value w) fireEvent
   where
     fireEvent = leftmost [ () <$ (ffilter (==13) $ _hwidget_keypress w)
                          , () <$ (ffilter not $ updated $ _hwidget_hasFocus w)
@@ -485,13 +479,13 @@ inputOnEnter wFunc cfg = do
 -- | A list dropdown widget.
 listDropdown :: (MonadWidget t m)
   => Dynamic t [a]
-  -> (a -> String)
-  -> Dynamic t (Map String String)
-  -> String
+  -> (a -> Text)
+  -> Dynamic t (Map Text Text)
+  -> Text
   -> m (Dynamic t (Maybe a))
 listDropdown xs f attrs defS = do
-  m <- mapDyn (M.fromList . zip [(1::Int)..]) xs
-  opts <- mapDyn ((M.insert 0 defS) . M.map f) m
+  let m = M.fromList . zip [(1::Int)..] <$> xs
+      opts = (M.insert 0 defS) . M.map f <$> m
   sel <- liftM _dropdown_value $ dropdown 0 opts $ def & attributes .~ attrs
-  combineDyn M.lookup sel m
+  return $ zipDynWith M.lookup sel m
 

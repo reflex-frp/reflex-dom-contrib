@@ -1,9 +1,11 @@
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE TypeFamilies        #-}
 {-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Reflex.Dom.Contrib.Widgets.ButtonGroup (
@@ -13,25 +15,15 @@ module Reflex.Dom.Contrib.Widgets.ButtonGroup (
 ) where
 
 ------------------------------------------------------------------------------
-import           Control.Monad              (liftM)
 import           Control.Monad.IO.Class     (liftIO)
 import           Data.Bool                  (bool)
 import qualified Data.Map                   as Map
 import           Data.Maybe                 (fromMaybe, listToMaybe)
 import           Data.Monoid                ((<>))
+import           Data.Text                  (Text)
 import           GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,
                                              setChecked)
-import           Reflex.Dom       ((=:), EventName(Blur, Click, Focus,
-                                                   Keydown, Keypress, Keyup),
-                                   Event, Dynamic, holdDyn, MonadWidget,
-                                   attachWith, combineDyn, current, demux,
-                                   domEvent, dynText, getPostBuild, el,
-                                   elDynAttr', forDyn, getDemuxed,
-                                   joinDynThroughMap, leftmost, listWithKey,
-                                   mapDyn, never, switchPromptlyDyn, qDyn,
-                                   unqDyn, updated)
-import           Reflex.Dom.Class           (performEvent)
-import           Reflex.Dom.Widget.Basic    (_el_element)
+import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------
@@ -42,7 +34,7 @@ import           Reflex.Dom.Contrib.Widgets.Common
 --   one selection, under the HtmlWidget interface
 buttonGroup
   :: forall t m a.(MonadWidget t m, Eq a)
-  => String
+  => Text
      -- ^ Html tag name for the container (normally @"div"@ or @"table"@)
   -> (Maybe Int -> Dynamic t a -> Dynamic t Bool -> m (Event t (), Dynamic t Bool))
      -- ^ WidgetMonadic action for rendering a single button, returning click events and focus state
@@ -65,11 +57,11 @@ buttonGroup htmlTag drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) = 
 
     dynK <- holdDyn Nothing $ leftmost [internSet, externSet]
 
-    dynButtons'  <- mapDyn (Map.mapKeys Just) dynButtons
+    let dynButtons'  = Map.mapKeys Just <$> dynButtons
 
     (clickSelEvents, hasFocus) <- selectViewListWithKey_' dynK dynButtons' drawDynBtn
 
-    dynSelV <- combineDyn (\k m -> k >>= flip Map.lookup m) dynK dynButtons
+    let dynSelV = zipDynWith (\k m -> k >>= flip Map.lookup m) dynK dynButtons
 
     return (HtmlWidget dynSelV internalV never never never hasFocus)
 
@@ -96,14 +88,14 @@ selectViewListWithKey_' selection vals mkChild = do
   let selectionDemux = demux selection -- For good performance, this value must be shared across all children
 
   selectChildAndFocus <- listWithKey vals $ \k v -> do
-    selected <- getDemuxed selectionDemux k
+    let selected = demuxed selectionDemux k
     (selectSelf, selfFocus) <- mkChild k v selected
-    return $ (fmap (const k) selectSelf, selfFocus)
+    return (fmap (const k) selectSelf, selfFocus)
 
-  selectChild <- mapDyn (Map.map fst) selectChildAndFocus
-  selEvents <- liftM switchPromptlyDyn $ mapDyn (leftmost . Map.elems) selectChild
-  focusMap <- joinDynThroughMap <$> mapDyn (Map.map snd) selectChildAndFocus
-  dynFocused <- mapDyn (any id) focusMap
+  let selectChild = Map.map fst <$> selectChildAndFocus
+      selEvents = switchPromptlyDyn $ leftmost . Map.elems <$> selectChild
+      focusMap = joinDynThroughMap $ Map.map snd <$> selectChildAndFocus
+      dynFocused = any id <$> focusMap
 
   return (selEvents, dynFocused)
 
@@ -118,18 +110,15 @@ revLookup m (Just v) = listToMaybe . Map.keys $ Map.filter (== v) m
 ------------------------------------------------------------------------------
 -- | Produce a bootstrap <http://v4-alpha.getbootstrap.com/components/button-group/ button group>
 bootstrapButtonGroup :: forall t m a.(MonadWidget t m, Eq a)
-                     => Dynamic t [(a,String)]
+                     => Dynamic t [(a,Text)]
                         -- ^ Selectable values and their string labels
                      -> GWidget t m (Maybe a)
                         -- ^ Button group in a 'GWidget' interface (function from 'WidgetConfig' to 'HtmlWidget' )
 bootstrapButtonGroup dynEntryList cfg = do
-  btns :: Dynamic t (Map.Map Int a) <- forDyn dynEntryList $ \pairs ->
-    Map.fromList (zip [1..] (Prelude.map fst pairs))
+  let btns :: Dynamic t (Map.Map Int a) = (\pairs ->
+        Map.fromList (zip [1..] (Prelude.map fst pairs))) <$> dynEntryList
 
-  divAttrs <- forDyn (_widgetConfig_attributes cfg) $ \attrs ->
-    attrs <> "class"      =: "btn-group"
-          <> "role"       =: "group"
-          <> "aria-label" =: "..."
+  let divAttrs = mkAttrs <$> _widgetConfig_attributes cfg
 
   buttonGroup "div" handleOne btns
     (WidgetConfig {_widgetConfig_attributes   = divAttrs
@@ -139,12 +128,15 @@ bootstrapButtonGroup dynEntryList cfg = do
 
   where
 
+    mkAttrs attrs = attrs <> "class"      =: "btn-group"
+                          <> "role"       =: "group"
+                          <> "aria-label" =: "..."
     handleOne _ dynV dynChecked = do
-      txt <- combineDyn (\v m -> fromMaybe "" $ Prelude.lookup v m)
+      let txt = zipDynWith (\v m -> fromMaybe "" $ Prelude.lookup v m)
                         dynV dynEntryList
-      btnAttrs <- forDyn dynChecked $ \b ->
-           "type"  =: "button"
-        <> "class" =: ("btn btn-default" <> bool "" " active" b)
+          btnAttrs = (\b ->
+           "type"  =: "button" <>
+           "class" =: ("btn btn-default" <> bool "" " active" b)) <$> dynChecked
       (b,_) <- elDynAttr' "button" btnAttrs $ dynText txt
       f     <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                         , True  <$ (Focus `domEvent` b)]
@@ -154,35 +146,36 @@ bootstrapButtonGroup dynEntryList cfg = do
 
 ------------------------------------------------------------------------------
 -- | A group of radio buttons in a table layout
-radioGroup :: forall t m a.(MonadWidget t m, Eq a, Show a)
-           => Dynamic t String
+radioGroup :: forall t m a.(MonadWidget t m, Eq a)
+           => Dynamic t Text
               -- ^ The name for the button group (different groups should be given different names)
-           -> Dynamic t [(a,String)]
+           -> Dynamic t [(a,Text)]
               -- ^ Selectable values and their string labels
            -> GWidget t m (Maybe a)
               -- ^ Radio group in a 'GWidget' interface (function from 'WidgetConfig' to 'HtmlWidget' )
 radioGroup dynName dynEntryList cfg = do
-  btns <- forDyn dynEntryList $ \pairs ->
-    Map.fromList (zip [1..] (map fst pairs))
+  let btns = (\pairs ->
+        Map.fromList (zip [1..] (map fst pairs))) <$> dynEntryList
 
   buttonGroup "table" handleOne btns cfg
 
   where
 
+    mkBtnAttrs nm chkd =
+        "type" =: "radio"
+     <> "name" =: nm
+     <> bool mempty ("checked" =: "checked") chkd
     handleOne _ dynV dynChecked = do
 
-      el "tr" $ do
-        txt <- combineDyn (\v m -> fromMaybe "" $ Prelude.lookup v m)
-               dynV dynEntryList
-        btnAttrs <- $(qDyn [| "type" =: "radio"
-                           <> "name" =: $(unqDyn [|dynName|])
-                           <> bool mempty ("checked" =: "checked")
-                              $(unqDyn [|dynChecked|])
-                           |])
-        (b,_) <- el "td" $ elDynAttr' "input" btnAttrs $ return ()
+      el "tr" $ el "td" $ el "label" $  do
+        let txt = zipDynWith (\v m -> fromMaybe "" $ Prelude.lookup v m)
+                             dynV dynEntryList
+
+            btnAttrs = mkBtnAttrs <$> dynName <*> dynChecked
+        (b,_) <- elDynAttr' "input" btnAttrs $ return ()
         f <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                       , True  <$ (Focus `domEvent` b)]
-        el "td" $ dynText txt
-        let e = castToHTMLInputElement $ _el_element b
+        dynText txt
+        let e = castToHTMLInputElement $ _element_raw b
         _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)

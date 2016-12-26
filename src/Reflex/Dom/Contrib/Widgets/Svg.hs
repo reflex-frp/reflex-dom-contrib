@@ -22,11 +22,12 @@ Convenience functions for generating SVG from reflex.
 module Reflex.Dom.Contrib.Widgets.Svg where
 
 ------------------------------------------------------------------------------
-import Data.Map (Map)
-import qualified Data.Map as Map
-import Reflex
-import Reflex.Dom
-import Data.Text (Text)
+import           Data.Map   (Map)
+import qualified Data.Map   as Map
+import           Data.Text  (Text)
+import           Data.Text  (Text)
+import           Reflex
+import           Reflex.Dom
 ------------------------------------------------------------------------------
 
 {-# INLINABLE svgDynAttr' #-}
@@ -47,7 +48,8 @@ svgAttr elementTag attrs child = svgDynAttr elementTag (constDyn attrs) child
 
 {-# INLINABLE svg' #-}
 svg' :: forall t m a. MonadWidget t m => Text -> m a -> m (El t, a)
-svg' elementTag child = svgAttr' elementTag (Map.empty :: AttributeMap) child
+svg' elementTag child = svgAttr' elementTag (Map.empty :: Map Text Text) child
+
 
 {-# INLINABLE svg #-}
 svg :: forall t m a. MonadWidget t m => Text -> m a -> m a
