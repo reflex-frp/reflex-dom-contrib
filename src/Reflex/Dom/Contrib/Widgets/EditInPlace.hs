@@ -26,7 +26,7 @@ import           Reflex
 import           Reflex.Dom
 import           Reflex.Dom.Contrib.Utils
 import           Reflex.Dom.Contrib.Widgets.Common
-import           JSDOM.Types (MonadJSM)
+import           GHCJS.DOM.Types (MonadJSM)
 ------------------------------------------------------------------------------
 
 

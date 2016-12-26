@@ -23,7 +23,6 @@ import           Data.Monoid                ((<>))
 import           Data.Text                  (Text)
 import           GHCJS.DOM.HTMLInputElement (getChecked,setChecked,HTMLInputElement(..))
 import GHCJS.DOM.Types (MonadJSM, File, uncheckedCastTo)
-import           JSDOM.Types (MonadJSM)
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
