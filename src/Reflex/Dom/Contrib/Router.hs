@@ -40,24 +40,18 @@ import           GHCJS.DOM.Types           (Location(..))
 import           Reflex.Dom                hiding (EventName, Window)
 import qualified URI.ByteString            as U
 #if ghcjs_HOST_OS
-import           Control.Monad             (liftM)
 import qualified GHCJS.DOM                 as DOM
-import           GHCJS.DOM                 (currentWindow,
-                                            runWebGUI, webViewGetDomDocument)
-import           GHCJS.DOM.Document        (getDefaultView, getBody)
+import           GHCJS.DOM.Document        (getDefaultView)
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (History, back, forward, pushState)
-import           GHCJS.DOM.Location        (getPathname, toString)
-import           GHCJS.DOM.Types           (castToHTMLDocument)
+import           GHCJS.DOM.Location        (toString)
 import           GHCJS.DOM.Window          (Window, getHistory,
                                             getLocation, popState)
 import           GHCJS.Marshal.Pure
-import           GHCJS.Prim                (JSVal)
-import           Reflex.Dom.Contrib.Utils
 #else
 import           Control.Monad.Reader      (ReaderT)
 #endif
-
+------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
