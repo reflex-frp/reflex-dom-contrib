@@ -118,7 +118,7 @@ setWindowLoc :: String -> IO ()
 setWindowLoc = js_setWindowLoc . toJSString
 
 foreign import javascript unsafe
-  "window.location = window['location']['origin'] + $1;"
+  "window['location'] = window['location']['origin'] + $1;"
   js_setWindowLoc :: JSString -> IO ()
 #else
 setWindowLoc = error "setWindowLoc: can only be used with GHCJS"

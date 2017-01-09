@@ -212,7 +212,7 @@ getURI = do
 
 
 #if ghcjs_HOST_OS
-foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w.dispatchEvent(e);"
+foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w['dispatchEvent'](e);"
   dispatchEvent' :: IO ()
 #else
 data Window
