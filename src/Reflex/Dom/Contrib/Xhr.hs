@@ -5,7 +5,8 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-|
 
 Convenience functions for dealing with XMLHttpRequest.
@@ -35,6 +36,7 @@ import           Reflex.Dom
 
 ------------------------------------------------------------------------------
 -- | URL encodes a map of key-value pairs.
+
 formEncode :: Map Text ByteString -> Text
 formEncode m =
     T.intercalate "&" $
