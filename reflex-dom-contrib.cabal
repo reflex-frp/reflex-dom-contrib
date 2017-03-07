@@ -1,5 +1,5 @@
 name:                reflex-dom-contrib
-version:             0.5
+version:             0.5.0.1
 synopsis:            A place to experiment with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
@@ -50,7 +50,7 @@ library
      Reflex.Dom.Contrib.Geoposition
 
   build-depends:
-    aeson             >= 0.8  && < 1.1,
+    aeson             >= 0.8  && < 1.2,
     base              >= 4.6  && < 4.10,
     bifunctors        >= 4.0  && < 5.5,
     bytestring        >= 0.10 && < 0.11,
