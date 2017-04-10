@@ -41,12 +41,10 @@ import           Reflex.Dom                hiding (EventName, Window)
 import qualified URI.ByteString            as U
 #if ghcjs_HOST_OS
 import qualified GHCJS.DOM                 as DOM
-import           GHCJS.DOM.Document        (getDefaultView)
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (History, back, forward, pushState)
 import           GHCJS.DOM.Location        (toString)
-import           GHCJS.DOM.Window          (Window, getHistory,
-                                            getLocation, popState)
+import           GHCJS.DOM.Window          (getHistory, getLocation, popState)
 import           GHCJS.Marshal.Pure
 #else
 import           Control.Monad.Reader      (ReaderT)
@@ -65,7 +63,7 @@ import           Control.Monad.Reader      (ReaderT)
 --   But external calls to pushState that don't manually fire a popState
 --   won't be detected
 route
-  :: (HasWebView m, MonadWidget t m)
+  :: (HasJSContext m, MonadWidget t m)
   => Event t T.Text
   -> m (Dynamic t (U.URIRef U.Absolute))
 route pushTo = do
@@ -134,24 +132,9 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 
 
 -------------------------------------------------------------------------------
-#if ghcjs_HOST_OS
--- | Get the DOM window object.
-askDomWindow :: (HasWebView m, MonadIO m) => m Window
-askDomWindow = do
-  wv <- askWebView
-  Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
-  Just window <- liftIO $ getDefaultView doc
-  return window
-#else
-askDomWindow :: (MonadIO m) => m Window
-askDomWindow = error "askDomWindow is only available to ghcjs"
-#endif
-
-
--------------------------------------------------------------------------------
 getPopState :: (MonadWidget t m) => m (Event t URI)
 getPopState = do
-  window <- askDomWindow
+  window <- DOM.currentWindowUnchecked
   wrapDomEventMaybe window (`on` popState) $ liftIO $ do
     Just loc <- getLocation window
     locStr <- toString loc
@@ -159,28 +142,28 @@ getPopState = do
 
 
 -------------------------------------------------------------------------------
-goForward :: (HasWebView m, MonadIO m) => m ()
+goForward :: (HasJSContext m, MonadIO m) => m ()
 goForward = withHistory forward
 
 
 -------------------------------------------------------------------------------
-goBack :: (HasWebView m, MonadIO m) => m ()
+goBack :: (HasJSContext m, MonadIO m) => m ()
 goBack = withHistory back
 
 
 -------------------------------------------------------------------------------
-withHistory :: (HasWebView m, MonadIO m) => (History -> IO a) -> m a
+withHistory :: (HasJSContext m, MonadIO m) => (History -> IO a) -> m a
 withHistory act = do
-  Just h <- liftIO . getHistory =<< askDomWindow
+  Just h <- liftIO . getHistory =<< DOM.currentWindowUnchecked
   liftIO $ act h
 
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
-getLoc :: (HasWebView m, MonadIO m) => m Location
+getLoc :: (HasJSContext m, MonadIO m) => m Location
 #if ghcjs_HOST_OS
 getLoc = do
-  Just win <- liftIO . getLocation =<< askDomWindow
+  Just win <- liftIO . getLocation =<< DOM.currentWindowUnchecked
   return win
 #else
 getLoc = error "getLocation' is only available to ghcjs"
@@ -189,7 +172,7 @@ getLoc = error "getLocation' is only available to ghcjs"
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the URL text of a window
-getUrlText :: (HasWebView m, MonadIO m) => m T.Text
+getUrlText :: (HasJSContext m, MonadIO m) => m T.Text
 getUrlText = getLoc >>= liftIO . toString
 
 
@@ -198,7 +181,7 @@ type URI = U.URIRef U.Absolute
 
 
 -------------------------------------------------------------------------------
-getURI :: (HasWebView m, MonadIO m) => m URI
+getURI :: (HasJSContext m, MonadIO m) => m URI
 getURI = do
   l <- getUrlText
   return $ either (error "No parse of window location") id .
