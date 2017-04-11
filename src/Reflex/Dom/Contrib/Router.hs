@@ -40,7 +40,7 @@ import           GHCJS.DOM.Types           (Location(..))
 import           Reflex.Dom                hiding (EventName, Window)
 import qualified URI.ByteString            as U
 #if ghcjs_HOST_OS
-import qualified GHCJS.DOM                 as DOM
+import           GHCJS.DOM                 (currentWindowUnchecked)
 import           GHCJS.DOM.EventM          (on)
 import           GHCJS.DOM.History         (History, back, forward, pushState)
 import           GHCJS.DOM.Location        (toString)
@@ -48,6 +48,7 @@ import           GHCJS.DOM.Window          (getHistory, getLocation, popState)
 import           GHCJS.Marshal.Pure
 #else
 import           Control.Monad.Reader      (ReaderT)
+import           GHCJS.DOM.Types           (JSM)
 #endif
 ------------------------------------------------------------------------------
 
@@ -134,7 +135,7 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 -------------------------------------------------------------------------------
 getPopState :: (MonadWidget t m) => m (Event t URI)
 getPopState = do
-  window <- DOM.currentWindowUnchecked
+  window <- currentWindowUnchecked
   wrapDomEventMaybe window (`on` popState) $ liftIO $ do
     Just loc <- getLocation window
     locStr <- toString loc
@@ -154,7 +155,7 @@ goBack = withHistory back
 -------------------------------------------------------------------------------
 withHistory :: (HasJSContext m, MonadIO m) => (History -> IO a) -> m a
 withHistory act = do
-  Just h <- liftIO . getHistory =<< DOM.currentWindowUnchecked
+  Just h <- liftIO . getHistory =<< currentWindowUnchecked
   liftIO $ act h
 
 
@@ -163,7 +164,7 @@ withHistory act = do
 getLoc :: (HasJSContext m, MonadIO m) => m Location
 #if ghcjs_HOST_OS
 getLoc = do
-  Just win <- liftIO . getLocation =<< DOM.currentWindowUnchecked
+  Just win <- liftIO . getLocation =<< currentWindowUnchecked
   return win
 #else
 getLoc = error "getLocation' is only available to ghcjs"
@@ -196,6 +197,9 @@ data Window
 data JSVal
 data History
 
+currentWindowUnchecked :: MonadIO m => m Window
+currentWindowUnchecked = undefined
+
 dispatchEvent' :: IO ()
 dispatchEvent' = undefined
 
@@ -220,10 +224,10 @@ popState = undefined
 pToJSVal :: Int -> JSVal
 pToJSVal = undefined
 
-on :: Window -> EventName t e -> EventM t e () -> IO (IO ())
+on :: Window -> EventName t e -> EventM t e () -> JSM (JSM ())
 on = undefined
 
-type EventM t e = ReaderT e IO
+type EventM t e = ReaderT e JSM
 data PopStateEvent
 data EventName t e
 
