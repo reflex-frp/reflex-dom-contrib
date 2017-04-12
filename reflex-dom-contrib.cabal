@@ -32,7 +32,7 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
---    Reflex.Dom.Contrib.Router
+    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
