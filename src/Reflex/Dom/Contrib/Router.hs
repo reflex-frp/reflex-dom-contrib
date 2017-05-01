@@ -11,6 +11,7 @@
 {-# LANGUAGE TemplateHaskell          #-}
 {-# LANGUAGE TypeFamilies             #-}
 
+-- | Note: This module is only available under GHCJS
 module Reflex.Dom.Contrib.Router (
   -- == High-level routers
     route
@@ -39,7 +40,7 @@ import qualified Data.Text.Encoding        as T
 import           GHCJS.DOM.Types           (Location(..))
 import           Reflex.Dom                hiding (EventName, Window)
 import qualified URI.ByteString            as U
-#if ghcjs_HOST_OS
+-- #if ghcjs_HOST_OS
 import qualified GHCJS.DOM                 as DOM
 import           GHCJS.DOM.Document        (getDefaultView)
 import           GHCJS.DOM.EventM          (on)
@@ -48,9 +49,9 @@ import           GHCJS.DOM.Location        (toString)
 import           GHCJS.DOM.Window          (Window, getHistory,
                                             getLocation, popState)
 import           GHCJS.Marshal.Pure
-#else
-import           Control.Monad.Reader      (ReaderT)
-#endif
+-- #else
+-- import           Control.Monad.Reader      (ReaderT)
+-- #endif
 ------------------------------------------------------------------------------
 
 
@@ -134,7 +135,7 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 
 
 -------------------------------------------------------------------------------
-#if ghcjs_HOST_OS
+-- #if ghcjs_HOST_OS
 -- | Get the DOM window object.
 askDomWindow :: (HasWebView m, MonadIO m) => m Window
 askDomWindow = do
@@ -142,10 +143,7 @@ askDomWindow = do
   Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
   Just window <- liftIO $ getDefaultView doc
   return window
-#else
-askDomWindow :: (MonadIO m) => m Window
-askDomWindow = error "askDomWindow is only available to ghcjs"
-#endif
+-- #endif
 
 
 -------------------------------------------------------------------------------
@@ -178,13 +176,11 @@ withHistory act = do
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
 getLoc :: (HasWebView m, MonadIO m) => m Location
-#if ghcjs_HOST_OS
+-- #if ghcjs_HOST_OS
 getLoc = do
   Just win <- liftIO . getLocation =<< askDomWindow
   return win
-#else
-getLoc = error "getLocation' is only available to ghcjs"
-#endif
+-- #endif
 
 
 -------------------------------------------------------------------------------
@@ -205,10 +201,11 @@ getURI = do
     U.parseURI U.laxURIParserOptions $ T.encodeUtf8 l
 
 
-#if ghcjs_HOST_OS
+-- #if ghcjs_HOST_OS
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w['dispatchEvent'](e);"
   dispatchEvent' :: IO ()
-#else
+{-
+-- #else
 data Window
 data JSVal
 data History
@@ -247,8 +244,8 @@ data EventName t e
 toString :: Location -> IO T.Text
 toString = undefined
 
-#endif
-
+-- #endif
+-}
 
 -------------------------------------------------------------------------------
 hush :: Either e a -> Maybe a

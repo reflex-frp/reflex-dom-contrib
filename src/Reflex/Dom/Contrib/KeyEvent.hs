@@ -13,7 +13,9 @@ module Reflex.Dom.Contrib.KeyEvent
   , key
   , shift
   , ctrlKey
+#ifdef ghcjs_HOST_OS
   , Reflex.Dom.Contrib.KeyEvent.getKeyEvent
+#endif
   ) where
 
 ------------------------------------------------------------------------------
@@ -60,8 +62,8 @@ ctrlKey k = (key $ toUpper k) { keCtrl = True }
 
 
 ------------------------------------------------------------------------------
-getKeyEvent :: EventM e KeyboardEvent KeyEvent
 #ifdef ghcjs_HOST_OS
+getKeyEvent :: EventM e KeyboardEvent KeyEvent
 getKeyEvent = do
   e <- event
   code <- Reflex.Dom.getKeyEvent
@@ -74,7 +76,5 @@ foreign import javascript unsafe "$1['ctrlKey']"
 
 foreign import javascript unsafe "$1['shiftKey']"
   js_uiEventGetShiftKey :: JSVal -> IO Bool
-#else
-getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
 #endif
 
