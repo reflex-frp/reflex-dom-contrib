@@ -32,7 +32,6 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
-    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
@@ -48,6 +47,7 @@ library
   if impl(ghcjs)
    exposed-modules:
      Reflex.Dom.Contrib.Geoposition
+     Reflex.Dom.Contrib.Router
 
   build-depends:
     aeson             >= 0.8  && < 1.1,
