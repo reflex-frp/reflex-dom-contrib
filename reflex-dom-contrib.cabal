@@ -32,7 +32,7 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
-    Reflex.Dom.Contrib.Router
+--    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
@@ -46,9 +46,9 @@ library
     Reflex.Dom.Contrib.Widgets.Svg
     Reflex.Dom.Contrib.Widgets.ScriptDependent
 
-  if impl(ghcjs)
-   exposed-modules:
-     Reflex.Dom.Contrib.Geoposition
+--  if impl(ghcjs)
+--   exposed-modules:
+--     Reflex.Dom.Contrib.Geoposition
 
   build-depends:
     aeson             >= 0.8  && < 1.2,
@@ -58,7 +58,7 @@ library
     base64-bytestring >= 1.0  && < 1.1,
     containers        >= 0.5  && < 0.6,
     data-default      >= 0.5  && < 0.8,
-    ghcjs-dom         >= 0.2  && < 0.3,
+    ghcjs-dom         >= 0.2  && < 0.8,
     http-types        >= 0.8  && < 0.10,
     lens              >= 4.9  && < 4.16,
     mtl               >= 2.0  && < 2.3,

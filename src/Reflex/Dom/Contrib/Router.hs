@@ -261,3 +261,4 @@ pfxErr :: URI -> T.Text -> String
 pfxErr pn pathBase =
   T.unpack $ "Encountered path (" <> T.decodeUtf8 (U.serializeURIRef' pn)
             <> ") without expected prefix (" <> pathBase <> ")"
+

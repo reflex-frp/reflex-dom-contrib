@@ -4,6 +4,8 @@
 {-# LANGUAGE GADTs                    #-}
 {-# LANGUAGE JavaScriptFFI            #-}
 {-# LANGUAGE RankNTypes               #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE FlexibleContexts         #-}
 
 {-|
 
