@@ -44,6 +44,7 @@ library
     Reflex.Dom.Contrib.Widgets.EditInPlace
     Reflex.Dom.Contrib.Widgets.Modal
     Reflex.Dom.Contrib.Widgets.Svg
+    Reflex.Dom.Contrib.Widgets.ScriptDependent
 
   if impl(ghcjs)
    exposed-modules:
