@@ -30,25 +30,30 @@ module Reflex.Dom.Contrib.Router (
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Lens              ((&), (.~), (^.))
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import qualified Data.ByteString.Char8     as BS
-import           Data.Monoid               ((<>))
-import qualified Data.Text                 as T
-import qualified Data.Text.Encoding        as T
-import           GHCJS.DOM.Types           (Location(..))
-import           Reflex.Dom                hiding (EventName, Window)
-import qualified URI.ByteString            as U
+import           Control.Lens                  ((&), (.~), (^.))
+import           Control.Monad.IO.Class        (MonadIO, liftIO)
+import qualified Data.ByteString.Char8         as BS
+import           Data.Monoid                   ((<>))
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as T
+import           GHCJS.DOM.Types               (Location(..))
+import           Reflex.Dom                    hiding (EventName, Window)
+import qualified URI.ByteString                as U
 #if ghcjs_HOST_OS
-import           GHCJS.DOM                 (currentWindowUnchecked)
-import           GHCJS.DOM.EventM          (on)
-import           GHCJS.DOM.History         (History, back, forward, pushState)
-import           GHCJS.DOM.Location        (toString)
-import           GHCJS.DOM.Window          (getHistory, getLocation, popState)
+import           GHCJS.DOM                     (currentWindowUnchecked)
+import           GHCJS.DOM.EventM              (on)
+import           GHCJS.DOM.History             (History, back, forward, pushState)
+import           GHCJS.DOM.Location            (getHref)
+import           GHCJS.DOM.Window              (getHistory, getLocation)
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+import           GHCJS.DOM.WindowEventHandlers (popState)
+#else
+import           GHCJS.DOM.Window              (popState)
+#endif
 import           GHCJS.Marshal.Pure
 #else
-import           Control.Monad.Reader      (ReaderT)
-import           GHCJS.DOM.Types           (JSM)
+import           Control.Monad.Reader          (ReaderT)
+import           GHCJS.DOM.Types               (JSM)
 #endif
 ------------------------------------------------------------------------------
 
@@ -71,7 +76,13 @@ route pushTo = do
   loc0    <- getURI
 
   _ <- performEvent $ ffor pushTo $ \t -> do
-    withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) t
+    let newState =
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+          Just t
+#else
+          t
+#endif
+    withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) newState
     liftIO dispatchEvent'
 
   locUpdates <- getPopState
@@ -137,8 +148,13 @@ getPopState :: (MonadWidget t m) => m (Event t URI)
 getPopState = do
   window <- currentWindowUnchecked
   wrapDomEventMaybe window (`on` popState) $ liftIO $ do
-    Just loc <- getLocation window
-    locStr <- toString loc
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+    loc
+#else
+    Just loc
+#endif
+      <- getLocation window
+    locStr <- getHref loc
     return . hush $ U.parseURI U.laxURIParserOptions (T.encodeUtf8 locStr)
 
 
@@ -155,7 +171,12 @@ goBack = withHistory back
 -------------------------------------------------------------------------------
 withHistory :: (HasJSContext m, MonadIO m) => (History -> IO a) -> m a
 withHistory act = do
-  Just h <- liftIO . getHistory =<< currentWindowUnchecked
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+  h
+#else
+  Just h
+#endif
+    <- liftIO . getHistory =<< currentWindowUnchecked
   liftIO $ act h
 
 
@@ -164,7 +185,12 @@ withHistory act = do
 getLoc :: (HasJSContext m, MonadIO m) => m Location
 #if ghcjs_HOST_OS
 getLoc = do
-  Just win <- liftIO . getLocation =<< currentWindowUnchecked
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+  win
+#else
+  Just win
+#endif
+    <- liftIO . getLocation =<< currentWindowUnchecked
   return win
 #else
 getLoc = error "getLocation' is only available to ghcjs"
@@ -174,7 +200,7 @@ getLoc = error "getLocation' is only available to ghcjs"
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the URL text of a window
 getUrlText :: (HasJSContext m, MonadIO m) => m T.Text
-getUrlText = getLoc >>= liftIO . toString
+getUrlText = getLoc >>= liftIO . getHref
 
 
 -------------------------------------------------------------------------------
@@ -231,8 +257,8 @@ type EventM t e = ReaderT e JSM
 data PopStateEvent
 data EventName t e
 
-toString :: Location -> IO T.Text
-toString = undefined
+getHref :: Location -> IO T.Text
+getHref = undefined
 
 #endif
 

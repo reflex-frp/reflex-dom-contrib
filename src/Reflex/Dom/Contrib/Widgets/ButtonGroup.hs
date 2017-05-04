@@ -68,9 +68,9 @@ buttonGroup htmlTag drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) = 
   let keyp = Keypress `domEvent` parent
       keyu = Keyup    `domEvent` parent
       keyd = Keydown  `domEvent` parent
-  return $ child { _hwidget_keypress = keyp
-                 , _hwidget_keyup    = keyu
-                 , _hwidget_keydown  = keyd }
+  return $ child { _hwidget_keypress = fromIntegral <$> keyp
+                 , _hwidget_keyup    = fromIntegral <$> keyu
+                 , _hwidget_keydown  = fromIntegral <$> keyd }
 
 
 ------------------------------------------------------------------------------

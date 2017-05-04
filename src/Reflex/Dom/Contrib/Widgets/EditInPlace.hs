@@ -22,6 +22,7 @@ import           Data.Map (Map)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           GHCJS.DOM.Element
+import           GHCJS.DOM.HTMLElement
 import           Reflex
 import           Reflex.Dom
 import           Reflex.Dom.Contrib.Utils

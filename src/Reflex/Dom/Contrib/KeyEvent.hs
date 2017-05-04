@@ -65,7 +65,7 @@ getKeyEvent :: EventM e KeyboardEvent KeyEvent
 getKeyEvent = do
   e <- event
   code <- Reflex.Dom.getKeyEvent
-  liftIO $ KeyEvent <$> pure code
+  liftIO $ KeyEvent <$> pure (fromIntegral code)
                     <*> js_uiEventGetCtrlKey (unKeyboardEvent e)
                     <*> js_uiEventGetShiftKey (unKeyboardEvent e)
 
