@@ -13,7 +13,7 @@ module Reflex.Dom.Contrib.KeyEvent
   , key
   , shift
   , ctrlKey
-#ifdef ghcjs_HOST_OS
+#if ghcjs_HOST_OS || GHCSTUBS
   , Reflex.Dom.Contrib.KeyEvent.getKeyEvent
 #endif
   ) where
@@ -76,5 +76,8 @@ foreign import javascript unsafe "$1['ctrlKey']"
 
 foreign import javascript unsafe "$1['shiftKey']"
   js_uiEventGetShiftKey :: JSVal -> IO Bool
+#elif GHCSTUBS
+getKeyEvent :: EventM e KeyboardEvent KeyEvent
+getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
 #endif
 
