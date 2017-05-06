@@ -25,9 +25,11 @@ this way makes it easier to compose and transform widgets.
 module Reflex.Dom.Contrib.Widgets.Common where
 
 ------------------------------------------------------------------------------
+import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
 import           Data.Default
+import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
@@ -214,6 +216,16 @@ instance IsWidget HtmlWidget where
 
 
 ------------------------------------------------------------------------------
+-- | Sometimes the HTML time widget gives you 12:30 and sometimes 12:30:00, so
+-- we need a lenient parser.
+lenientTimeParser :: String -> Maybe UTCTime
+lenientTimeParser s = foldl1' (<|>) $ map (($ s) . parse) fmts
+  where
+    parse = parseTimeM True defaultTimeLocale
+    fmts = ["%F %R", "%F %X"]
+
+
+------------------------------------------------------------------------------
 -- | Input widget for datetime values.
 dateTimeWidget
     :: (MonadWidget t m)
@@ -232,8 +244,8 @@ dateTimeWidget cfg = do
           (setTime (_widgetConfig_initialValue cfg))
           (_widgetConfig_attributes cfg)
         return $ combineWidgets
-                   (\d t -> parseTimeM True defaultTimeLocale "%F %X" $
-                            toS d ++ " " ++ toS t ++ ":00") di ti
+                   (\d t -> lenientTimeParser $ toS d ++ " " ++ toS t)
+                   di ti
   where
     dfmt = "%F"
     tfmt = "%X"
