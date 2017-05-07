@@ -13,6 +13,12 @@ Misc reflex-dom helper functions.
 
 module Reflex.Dom.Contrib.Utils
   ( tshow
+  , widgetHoldHelper
+  , putDebugLn
+  , putDebugLnE
+  , listWithKeyAndSelection
+  , waitUntilJust
+#if ghcjs_HOST_OS || GHCSTUBS
   , alertEvent
   , js_alert
   , confirmEvent
@@ -20,11 +26,7 @@ module Reflex.Dom.Contrib.Utils
   , getWindowLocationPath
   , windowHistoryPushState
   , setWindowLoc
-  , widgetHoldHelper
-  , putDebugLn
-  , putDebugLnE
-  , listWithKeyAndSelection
-  , waitUntilJust
+#endif
   ) where
 
 ------------------------------------------------------------------------------
@@ -51,8 +53,8 @@ tshow = T.pack . show
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript alert dialog box when an
 -- event fires with a message to display.
-alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
 #ifdef ghcjs_HOST_OS
+alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
 alertEvent str e = performEvent_ (alert <$> e)
   where
     alert a = liftIO $ js_alert $ toJSString $ str a
@@ -60,7 +62,8 @@ alertEvent str e = performEvent_ (alert <$> e)
 foreign import javascript unsafe
   "alert($1)"
   js_alert :: JSString -> IO ()
-#else
+#elif GHCSTUBS
+alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
 alertEvent = error "alertEvent: can only be used with GHCJS"
 js_alert = error "js_alert: can only be used with GHCJS"
 #endif
@@ -68,8 +71,8 @@ js_alert = error "js_alert: can only be used with GHCJS"
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript confirmation dialog box
 -- when an event fires with a message to display.
-confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
 #ifdef ghcjs_HOST_OS
+confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
 confirmEvent str e = liftM (fmapMaybe id) $ performEvent (confirm <$> e)
   where
     confirm a = do
@@ -79,7 +82,8 @@ confirmEvent str e = liftM (fmapMaybe id) $ performEvent (confirm <$> e)
 foreign import javascript unsafe
   "confirm($1)"
   js_confirm :: JSString -> IO Bool
-#else
+#elif GHCSTUBS
+confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
 confirmEvent = error "confirmEvent: can only be used with GHCJS"
 js_confirm = error "js_confirm: can only be used with GHCJS"
 #endif
@@ -88,39 +92,42 @@ js_confirm = error "js_confirm: can only be used with GHCJS"
 -- | Gets the current path of the DOM Window (i.e., the contents of the
 -- address bar after the host, beginning with a "/").
 -- https://developer.mozilla.org/en-US/docs/Web/API/Location
-getWindowLocationPath :: Window -> IO String
 #ifdef ghcjs_HOST_OS
+getWindowLocationPath :: Window -> IO String
 getWindowLocationPath w = do
     liftM fromJSString $ js_windowLocationPath $ unWindow w
 
 foreign import javascript unsafe
   "$1['location']['pathname']"
   js_windowLocationPath :: JSVal ->  IO JSString
-#else
+#elif GHCSTUBS
+getWindowLocationPath :: Window -> IO String
 getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
 #endif
 
 ------------------------------------------------------------------------------
 -- | Pushes a new URL to the window history.
-windowHistoryPushState :: String -> IO ()
 #ifdef ghcjs_HOST_OS
+windowHistoryPushState :: String -> IO ()
 windowHistoryPushState = js_windowHistoryPushState . toJSString
 
 foreign import javascript unsafe
   "window['history']['pushState']({},\"\",$1)"
   js_windowHistoryPushState :: JSString -> IO ()
-#else
+#elif GHCSTUBS
+windowHistoryPushState :: String -> IO ()
 windowHistoryPushState = error "windowHistoryPushState: can only be used with GHCJS"
 #endif
 
-setWindowLoc :: String -> IO ()
 #ifdef ghcjs_HOST_OS
+setWindowLoc :: String -> IO ()
 setWindowLoc = js_setWindowLoc . toJSString
 
 foreign import javascript unsafe
   "window['location'] = window['location']['origin'] + $1;"
   js_setWindowLoc :: JSString -> IO ()
-#else
+#elif GHCSTUBS
+setWindowLoc :: String -> IO ()
 setWindowLoc = error "setWindowLoc: can only be used with GHCJS"
 #endif
 

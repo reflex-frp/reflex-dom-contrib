@@ -24,6 +24,11 @@ category:            FRP
 build-type:          Simple
 cabal-version:       >=1.10
 
+Flag include-ghc-stubs
+  Description:   Generate GHC stub functions for GHCJS only functions. 
+                 This allows compilation under GHC when using GHCJS only functions.
+  Default:       True
+
 library
   hs-source-dirs: src
 
@@ -32,7 +37,6 @@ library
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.Pagination
-    Reflex.Dom.Contrib.Router
     Reflex.Dom.Contrib.Utils
     Reflex.Dom.Contrib.Xhr
     Reflex.Dom.Contrib.Widgets.BoundedList
@@ -44,11 +48,15 @@ library
     Reflex.Dom.Contrib.Widgets.EditInPlace
     Reflex.Dom.Contrib.Widgets.Modal
     Reflex.Dom.Contrib.Widgets.Svg
-    Reflex.Dom.Contrib.Widgets.ScriptDependent
 
   if impl(ghcjs)
    exposed-modules:
      Reflex.Dom.Contrib.Geoposition
+
+  if impl(ghcjs) || flag(include-ghc-stubs)
+   exposed-modules:
+     Reflex.Dom.Contrib.Router
+     Reflex.Dom.Contrib.Widgets.ScriptDependent
 
   build-depends:
     aeson             >= 0.8  && < 1.2,
@@ -82,3 +90,6 @@ library
   default-language:    Haskell2010
 
   ghc-options: -Wall -fwarn-tabs
+
+  if flag(include-ghc-stubs)
+    cpp-options: -DGHCSTUBS
