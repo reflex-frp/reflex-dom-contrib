@@ -21,8 +21,9 @@ import qualified Data.Map                   as Map
 import           Data.Maybe                 (fromMaybe, listToMaybe)
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text)
-import           GHCJS.DOM.HTMLInputElement (getChecked,setChecked,HTMLInputElement(..))
-import GHCJS.DOM.Types (MonadJSM, File, uncheckedCastTo)
+import           GHCJS.DOM.Element          (Element (..))
+import           GHCJS.DOM.HTMLInputElement (setChecked, HTMLInputElement (..))
+import           GHCJS.DOM.Types            (MonadJSM, castTo)
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
@@ -177,6 +178,6 @@ radioGroup dynName dynEntryList cfg = do
                                       , True  <$ (Focus `domEvent` b)]
         dynText txt
 --        let e = castToHTMLInputElement $ _element_raw b
-        let e = uncheckedCastTo HTMLInputElement $ _element_raw b
+        Just e <- castTo HTMLInputElement $ _element_raw b
         _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)

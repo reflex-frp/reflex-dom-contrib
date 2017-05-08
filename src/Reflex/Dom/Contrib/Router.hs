@@ -39,21 +39,16 @@ import qualified Data.Text.Encoding            as T
 import           GHCJS.DOM.Types               (Location(..))
 import           Reflex.Dom                    hiding (EventName, Window)
 import qualified URI.ByteString                as U
-#if ghcjs_HOST_OS
-import           GHCJS.DOM                     (currentWindowUnchecked)
-import           GHCJS.DOM.EventM              (on)
+import           GHCJS.DOM.Types               (MonadJSM, pToJSVal)
 import           GHCJS.DOM.History             (History, back, forward, pushState)
+import           GHCJS.DOM                     (currentWindow)
+import           GHCJS.DOM.EventM              (on)
 import           GHCJS.DOM.Location            (getHref)
 import           GHCJS.DOM.Window              (getHistory, getLocation)
 #if MIN_VERSION_ghcjs_dom(0,8,0)
 import           GHCJS.DOM.WindowEventHandlers (popState)
 #else
 import           GHCJS.DOM.Window              (popState)
-#endif
-import           GHCJS.Marshal.Pure
-#else
-import           Control.Monad.Reader          (ReaderT)
-import           GHCJS.DOM.Types               (JSM)
 #endif
 ------------------------------------------------------------------------------
 
@@ -82,7 +77,7 @@ route pushTo = do
 #else
           t
 #endif
-    withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) newState
+    withHistory $ \h -> pushState h (0 :: Double) ("" :: T.Text) (newState :: Maybe T.Text)
     liftIO dispatchEvent'
 
   locUpdates <- getPopState
@@ -146,8 +141,8 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 -------------------------------------------------------------------------------
 getPopState :: (MonadWidget t m) => m (Event t URI)
 getPopState = do
-  window <- currentWindowUnchecked
-  wrapDomEventMaybe window (`on` popState) $ liftIO $ do
+  Just window <- currentWindow
+  wrapDomEventMaybe window (`on` popState) $ do
 #if MIN_VERSION_ghcjs_dom(0,8,0)
     loc
 #else
@@ -159,25 +154,26 @@ getPopState = do
 
 
 -------------------------------------------------------------------------------
-goForward :: (HasJSContext m, MonadIO m) => m ()
+goForward :: (HasJSContext m, MonadJSM m) => m ()
 goForward = withHistory forward
 
 
 -------------------------------------------------------------------------------
-goBack :: (HasJSContext m, MonadIO m) => m ()
+goBack :: (HasJSContext m, MonadJSM m) => m ()
 goBack = withHistory back
 
 
 -------------------------------------------------------------------------------
-withHistory :: (HasJSContext m, MonadIO m) => (History -> IO a) -> m a
+withHistory :: (HasJSContext m, MonadJSM m) => (History -> m a) -> m a
 withHistory act = do
+  Just w <- currentWindow
 #if MIN_VERSION_ghcjs_dom(0,8,0)
   h
 #else
   Just h
 #endif
-    <- liftIO . getHistory =<< currentWindowUnchecked
-  liftIO $ act h
+    <- getHistory w
+  act h
 
 
 -------------------------------------------------------------------------------
@@ -199,8 +195,8 @@ getLoc = error "getLocation' is only available to ghcjs"
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the URL text of a window
-getUrlText :: (HasJSContext m, MonadIO m) => m T.Text
-getUrlText = getLoc >>= liftIO . getHref
+getUrlText :: (HasJSContext m, MonadJSM m) => m T.Text
+getUrlText = getLoc >>= getHref
 
 
 -------------------------------------------------------------------------------
@@ -208,7 +204,7 @@ type URI = U.URIRef U.Absolute
 
 
 -------------------------------------------------------------------------------
-getURI :: (HasJSContext m, MonadIO m) => m URI
+getURI :: (HasJSContext m, MonadJSM m) => m URI
 getURI = do
   l <- getUrlText
   return $ either (error "No parse of window location") id .
@@ -219,47 +215,8 @@ getURI = do
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w['dispatchEvent'](e);"
   dispatchEvent' :: IO ()
 #else
-data Window
-data JSVal
-data History
-
-currentWindowUnchecked :: MonadIO m => m Window
-currentWindowUnchecked = undefined
-
 dispatchEvent' :: IO ()
 dispatchEvent' = undefined
-
-forward :: History -> IO ()
-forward = undefined
-
-back :: History -> IO ()
-back = undefined
-
-getLocation :: Window -> IO (Maybe Location)
-getLocation = undefined
-
-getHistory :: Window -> IO (Maybe History)
-getHistory = undefined
-
-pushState :: History -> JSVal -> T.Text -> T.Text -> IO ()
-pushState = undefined
-
-popState :: EventName Window PopStateEvent
-popState = undefined
-
-pToJSVal :: Int -> JSVal
-pToJSVal = undefined
-
-on :: Window -> EventName t e -> EventM t e () -> JSM (JSM ())
-on = undefined
-
-type EventM t e = ReaderT e JSM
-data PopStateEvent
-data EventName t e
-
-getHref :: Location -> IO T.Text
-getHref = undefined
-
 #endif
 
 
