@@ -52,6 +52,12 @@ library
   if impl(ghcjs)
    exposed-modules:
      Reflex.Dom.Contrib.Geoposition
+     Reflex.Dom.Contrib.Router
+
+  if impl(ghcjs) || flag(include-ghc-stubs)
+   exposed-modules:
+     Reflex.Dom.Contrib.Router
+     Reflex.Dom.Contrib.Widgets.ScriptDependent
 
   if impl(ghcjs) || flag(include-ghc-stubs)
    exposed-modules:
