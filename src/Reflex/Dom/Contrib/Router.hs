@@ -31,7 +31,7 @@ module Reflex.Dom.Contrib.Router (
 
 ------------------------------------------------------------------------------
 import           Control.Lens                  ((&), (.~), (^.))
-import           Control.Monad.IO.Class        (MonadIO, liftIO)
+import           Control.Monad.IO.Class        (liftIO)
 import qualified Data.ByteString.Char8         as BS
 import           Data.Monoid                   ((<>))
 import qualified Data.Text                     as T
@@ -39,7 +39,7 @@ import qualified Data.Text.Encoding            as T
 import           GHCJS.DOM.Types               (Location(..))
 import           Reflex.Dom                    hiding (EventName, Window)
 import qualified URI.ByteString                as U
-import           GHCJS.DOM.Types               (MonadJSM, pToJSVal)
+import           GHCJS.DOM.Types               (MonadJSM)
 import           GHCJS.DOM.History             (History, back, forward, pushState)
 import           GHCJS.DOM                     (currentWindow)
 import           GHCJS.DOM.EventM              (on)
@@ -178,16 +178,17 @@ withHistory act = do
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
-getLoc :: (HasJSContext m, MonadIO m) => m Location
+getLoc :: (HasJSContext m, MonadJSM m) => m Location
 #if ghcjs_HOST_OS
 getLoc = do
+  Just win <- currentWindow
 #if MIN_VERSION_ghcjs_dom(0,8,0)
-  win
+  loc
 #else
-  Just win
+  Just loc
 #endif
-    <- liftIO . getLocation =<< currentWindowUnchecked
-  return win
+    <- getLocation win
+  return loc
 #else
 getLoc = error "getLocation' is only available to ghcjs"
 #endif
