@@ -78,9 +78,9 @@ route pushTo = do
   _ <- performEvent $ ffor pushTo $ \t -> do
     let newState =
 #if MIN_VERSION_ghcjs_dom(0,8,0)
-          Just t
-#else
           t
+#else
+          Just t
 #endif
     withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) newState
     liftIO dispatchEvent'
@@ -149,9 +149,9 @@ getPopState = do
   window <- currentWindowUnchecked
   wrapDomEventMaybe window (`on` popState) $ liftIO $ do
 #if MIN_VERSION_ghcjs_dom(0,8,0)
-    loc
-#else
     Just loc
+#else
+    loc
 #endif
       <- getLocation window
     locStr <- getHref loc
@@ -172,9 +172,9 @@ goBack = withHistory back
 withHistory :: (HasJSContext m, MonadIO m) => (History -> IO a) -> m a
 withHistory act = do
 #if MIN_VERSION_ghcjs_dom(0,8,0)
-  h
-#else
   Just h
+#else
+  h
 #endif
     <- liftIO . getHistory =<< currentWindowUnchecked
   liftIO $ act h
