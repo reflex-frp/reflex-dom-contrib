@@ -308,9 +308,9 @@ htmlTextInput' inputType cfg = do
     let w = HtmlWidget
           (_textInput_value ti)
           (_textInput_input ti)
-          (_textInput_keypress ti)
-          (_textInput_keydown ti)
-          (_textInput_keyup ti)
+          (fromIntegral <$> _textInput_keypress ti)
+          (fromIntegral <$> _textInput_keydown ti)
+          (fromIntegral <$> _textInput_keyup ti)
           (_textInput_hasFocus ti)
     return (_textInput_element ti, w)
 

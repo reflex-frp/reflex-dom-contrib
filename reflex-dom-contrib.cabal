@@ -49,9 +49,9 @@ library
     Reflex.Dom.Contrib.Widgets.Modal
     Reflex.Dom.Contrib.Widgets.Svg
 
-  if impl(ghcjs)
-   exposed-modules:
-     Reflex.Dom.Contrib.Geoposition
+--  if impl(ghcjs)
+--   exposed-modules:
+--     Reflex.Dom.Contrib.Geoposition
 
   if impl(ghcjs) || flag(include-ghc-stubs)
    exposed-modules:
@@ -61,12 +61,12 @@ library
   build-depends:
     aeson             >= 0.8  && < 1.2,
     base              >= 4.6  && < 4.10,
+    base64-bytestring >= 1.0  && < 1.1,
     bifunctors        >= 4.0  && < 5.5,
     bytestring        >= 0.10.8 && < 0.11,
-    base64-bytestring >= 1.0  && < 1.1,
     containers        >= 0.5  && < 0.6,
     data-default      >= 0.5  && < 0.8,
-    ghcjs-dom         >= 0.2  && < 0.3,
+    ghcjs-dom         >= 0.2  && < 0.9,
     http-types        >= 0.8  && < 0.10,
     lens              >= 4.9  && < 4.16,
     mtl               >= 2.0  && < 2.3,

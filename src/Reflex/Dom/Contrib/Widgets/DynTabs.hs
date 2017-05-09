@@ -31,10 +31,12 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
 
 ------------------------------------------------------------------------------
 import           Data.Default
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Data.Text (Text)
-import qualified Data.Text as T
+import           Data.Map                 (Map)
+import qualified Data.Map                 as M
+import           Data.Monoid
+import qualified Data.Set                 as S
+import           Data.Text                (Text)
+import qualified Data.Text                as T
 import           Reflex
 import           Reflex.Dom
 ------------------------------------------------------------------------------
@@ -70,8 +72,7 @@ data TabBar t tab = TabBar
 
 ------------------------------------------------------------------------------
 -- | Renders a dynamic list of tabs comprising a tab bar.
-tabBar
-    :: forall t m tab. (MonadWidget t m, Tab t m tab)
+tabBar :: forall t m tab. (MonadWidget t m, Tab t m tab)
     => TabBarConfig t tab
     -> m (TabBar t tab)
 tabBar (TabBarConfig initialSelected initialTabs tabs curTab) = do

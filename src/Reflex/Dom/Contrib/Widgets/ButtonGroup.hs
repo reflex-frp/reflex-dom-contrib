@@ -21,8 +21,9 @@ import qualified Data.Map                   as Map
 import           Data.Maybe                 (fromMaybe, listToMaybe)
 import           Data.Monoid                ((<>))
 import           Data.Text                  (Text)
-import           GHCJS.DOM.HTMLInputElement (castToHTMLInputElement,
-                                             setChecked)
+import           GHCJS.DOM.Element          (Element (..))
+import           GHCJS.DOM.HTMLInputElement (setChecked, HTMLInputElement (..))
+import           GHCJS.DOM.Types            (MonadJSM, castTo)
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
@@ -68,9 +69,9 @@ buttonGroup htmlTag drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) = 
   let keyp = Keypress `domEvent` parent
       keyu = Keyup    `domEvent` parent
       keyd = Keydown  `domEvent` parent
-  return $ child { _hwidget_keypress = keyp
-                 , _hwidget_keyup    = keyu
-                 , _hwidget_keydown  = keyd }
+  return $ child { _hwidget_keypress = fromIntegral <$> keyp
+                 , _hwidget_keyup    = fromIntegral <$> keyu
+                 , _hwidget_keydown  = fromIntegral <$> keyd }
 
 
 ------------------------------------------------------------------------------
@@ -146,7 +147,7 @@ bootstrapButtonGroup dynEntryList cfg = do
 
 ------------------------------------------------------------------------------
 -- | A group of radio buttons in a table layout
-radioGroup :: forall t m a.(MonadWidget t m, Eq a)
+radioGroup :: forall t m a.(MonadWidget t m, Eq a, MonadJSM IO)
            => Dynamic t Text
               -- ^ The name for the button group (different groups should be given different names)
            -> Dynamic t [(a,Text)]
@@ -176,6 +177,7 @@ radioGroup dynName dynEntryList cfg = do
         f <- holdDyn False $ leftmost [ False <$ (Blur  `domEvent` b)
                                       , True  <$ (Focus `domEvent` b)]
         dynText txt
-        let e = castToHTMLInputElement $ _element_raw b
+--        let e = castToHTMLInputElement $ _element_raw b
+        Just e <- castTo HTMLInputElement $ _element_raw b
         _ <- performEvent $ (liftIO . setChecked e) <$> updated dynChecked
         return (Click `domEvent` b, f)

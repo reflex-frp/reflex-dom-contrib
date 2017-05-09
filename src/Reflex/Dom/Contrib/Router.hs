@@ -30,26 +30,25 @@ module Reflex.Dom.Contrib.Router (
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Lens              ((&), (.~), (^.))
-import           Control.Monad.IO.Class    (MonadIO, liftIO)
-import qualified Data.ByteString.Char8     as BS
-import           Data.Monoid               ((<>))
-import qualified Data.Text                 as T
-import qualified Data.Text.Encoding        as T
-import           GHCJS.DOM.Types           (Location(..))
-import           Reflex.Dom                hiding (EventName, Window)
-import qualified URI.ByteString            as U
-#if ghcjs_HOST_OS
-import qualified GHCJS.DOM                 as DOM
-import           GHCJS.DOM.Document        (getDefaultView)
-import           GHCJS.DOM.EventM          (on)
-import           GHCJS.DOM.History         (History, back, forward, pushState)
-import           GHCJS.DOM.Location        (toString)
-import           GHCJS.DOM.Window          (Window, getHistory,
-                                            getLocation, popState)
-import           GHCJS.Marshal.Pure
+import           Control.Lens                  ((&), (.~), (^.))
+import           Control.Monad.IO.Class        (liftIO)
+import qualified Data.ByteString.Char8         as BS
+import           Data.Monoid                   ((<>))
+import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as T
+import           GHCJS.DOM.Types               (Location(..))
+import           Reflex.Dom                    hiding (EventName, Window)
+import qualified URI.ByteString                as U
+import           GHCJS.DOM.Types               (MonadJSM)
+import           GHCJS.DOM.History             (History, back, forward, pushState)
+import           GHCJS.DOM                     (currentWindow)
+import           GHCJS.DOM.EventM              (on)
+import           GHCJS.DOM.Location            (getHref)
+import           GHCJS.DOM.Window              (getHistory, getLocation)
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+import           GHCJS.DOM.WindowEventHandlers (popState)
 #else
-import           Control.Monad.Reader      (ReaderT)
+import           GHCJS.DOM.Window              (popState)
 #endif
 ------------------------------------------------------------------------------
 
@@ -65,14 +64,20 @@ import           Control.Monad.Reader      (ReaderT)
 --   But external calls to pushState that don't manually fire a popState
 --   won't be detected
 route
-  :: (HasWebView m, MonadWidget t m)
+  :: (HasJSContext m, MonadWidget t m)
   => Event t T.Text
   -> m (Dynamic t (U.URIRef U.Absolute))
 route pushTo = do
   loc0    <- getURI
 
   _ <- performEvent $ ffor pushTo $ \t -> do
-    withHistory $ \h -> pushState h (pToJSVal (0 :: Int)) ("" :: T.Text) t
+    let newState =
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+          Just t
+#else
+          t
+#endif
+    withHistory $ \h -> pushState h (0 :: Double) ("" :: T.Text) (newState :: Maybe T.Text)
     liftIO dispatchEvent'
 
   locUpdates <- getPopState
@@ -134,54 +139,56 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 
 
 -------------------------------------------------------------------------------
-#if ghcjs_HOST_OS
--- | Get the DOM window object.
-askDomWindow :: (HasWebView m, MonadIO m) => m Window
-askDomWindow = do
-  wv <- askWebView
-  Just doc <- liftIO . DOM.webViewGetDomDocument $ unWebViewSingleton wv
-  Just window <- liftIO $ getDefaultView doc
-  return window
-#else
-askDomWindow :: (MonadIO m) => m Window
-askDomWindow = error "askDomWindow is only available to ghcjs"
-#endif
-
-
--------------------------------------------------------------------------------
 getPopState :: (MonadWidget t m) => m (Event t URI)
 getPopState = do
-  window <- askDomWindow
-  wrapDomEventMaybe window (`on` popState) $ liftIO $ do
-    Just loc <- getLocation window
-    locStr <- toString loc
+  Just window <- currentWindow
+  wrapDomEventMaybe window (`on` popState) $ do
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+    loc
+#else
+    Just loc
+#endif
+      <- getLocation window
+    locStr <- getHref loc
     return . hush $ U.parseURI U.laxURIParserOptions (T.encodeUtf8 locStr)
 
 
 -------------------------------------------------------------------------------
-goForward :: (HasWebView m, MonadIO m) => m ()
+goForward :: (HasJSContext m, MonadJSM m) => m ()
 goForward = withHistory forward
 
 
 -------------------------------------------------------------------------------
-goBack :: (HasWebView m, MonadIO m) => m ()
+goBack :: (HasJSContext m, MonadJSM m) => m ()
 goBack = withHistory back
 
 
 -------------------------------------------------------------------------------
-withHistory :: (HasWebView m, MonadIO m) => (History -> IO a) -> m a
+withHistory :: (HasJSContext m, MonadJSM m) => (History -> m a) -> m a
 withHistory act = do
-  Just h <- liftIO . getHistory =<< askDomWindow
-  liftIO $ act h
+  Just w <- currentWindow
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+  h
+#else
+  Just h
+#endif
+    <- getHistory w
+  act h
 
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
-getLoc :: (HasWebView m, MonadIO m) => m Location
+getLoc :: (HasJSContext m, MonadJSM m) => m Location
 #if ghcjs_HOST_OS
 getLoc = do
-  Just win <- liftIO . getLocation =<< askDomWindow
-  return win
+  Just win <- currentWindow
+#if MIN_VERSION_ghcjs_dom(0,8,0)
+  loc
+#else
+  Just loc
+#endif
+    <- getLocation win
+  return loc
 #else
 getLoc = error "getLocation' is only available to ghcjs"
 #endif
@@ -189,8 +196,8 @@ getLoc = error "getLocation' is only available to ghcjs"
 
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the URL text of a window
-getUrlText :: (HasWebView m, MonadIO m) => m T.Text
-getUrlText = getLoc >>= liftIO . toString
+getUrlText :: (HasJSContext m, MonadJSM m) => m T.Text
+getUrlText = getLoc >>= getHref
 
 
 -------------------------------------------------------------------------------
@@ -198,7 +205,7 @@ type URI = U.URIRef U.Absolute
 
 
 -------------------------------------------------------------------------------
-getURI :: (HasWebView m, MonadIO m) => m URI
+getURI :: (HasJSContext m, MonadJSM m) => m URI
 getURI = do
   l <- getUrlText
   return $ either (error "No parse of window location") id .
@@ -209,44 +216,8 @@ getURI = do
 foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w['dispatchEvent'](e);"
   dispatchEvent' :: IO ()
 #else
-data Window
-data JSVal
-data History
-
 dispatchEvent' :: IO ()
 dispatchEvent' = undefined
-
-forward :: History -> IO ()
-forward = undefined
-
-back :: History -> IO ()
-back = undefined
-
-getLocation :: Window -> IO (Maybe Location)
-getLocation = undefined
-
-getHistory :: Window -> IO (Maybe History)
-getHistory = undefined
-
-pushState :: History -> JSVal -> T.Text -> T.Text -> IO ()
-pushState = undefined
-
-popState :: EventName Window PopStateEvent
-popState = undefined
-
-pToJSVal :: Int -> JSVal
-pToJSVal = undefined
-
-on :: Window -> EventName t e -> EventM t e () -> IO (IO ())
-on = undefined
-
-type EventM t e = ReaderT e IO
-data PopStateEvent
-data EventName t e
-
-toString :: Location -> IO T.Text
-toString = undefined
-
 #endif
 
 
@@ -261,3 +232,4 @@ pfxErr :: URI -> T.Text -> String
 pfxErr pn pathBase =
   T.unpack $ "Encountered path (" <> T.decodeUtf8 (U.serializeURIRef' pn)
             <> ") without expected prefix (" <> pathBase <> ")"
+

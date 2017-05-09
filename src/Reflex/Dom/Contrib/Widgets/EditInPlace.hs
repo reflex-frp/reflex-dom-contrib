@@ -22,10 +22,12 @@ import           Data.Map (Map)
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           GHCJS.DOM.Element
+import           GHCJS.DOM.HTMLElement
 import           Reflex
 import           Reflex.Dom
 import           Reflex.Dom.Contrib.Utils
 import           Reflex.Dom.Contrib.Widgets.Common
+import           GHCJS.DOM.Types (MonadJSM)
 ------------------------------------------------------------------------------
 
 
@@ -44,7 +46,7 @@ data EditState = Viewing
 -- on the text.  Edits are saved when the user presses enter or abandoned if
 -- the user presses escape or the text input loses focus.
 editInPlace
-    :: MonadWidget t m
+    :: (MonadWidget t m, MonadJSM IO)
     => Behavior t Bool
     -- ^ Whether or not click-to-edit is enabled
     -> Dynamic t Text
@@ -84,7 +86,7 @@ e2maybe (NameChange s) = Just s
 
 ------------------------------------------------------------------------------
 chooser
-    :: MonadWidget t m
+    :: (MonadWidget t m, MonadJSM IO)
     => Dynamic t Text
     -> EditState
     -> m (Event t SheetEditEvent)
@@ -100,7 +102,7 @@ data SheetEditEvent = NameChange Text
 
 ------------------------------------------------------------------------------
 editor
-    :: MonadWidget t m
+    :: (MonadWidget t m, MonadJSM IO)
     => Dynamic t Text
     -> m (Event t SheetEditEvent)
 editor name = do
