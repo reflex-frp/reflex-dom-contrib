@@ -66,7 +66,7 @@ ctrlKey k = (key $ toUpper k) { keCtrl = True }
 getKeyEvent :: EventM e KeyboardEvent KeyEvent
 getKeyEvent = do
   e <- event
-  code <- Reflex.Dom.getKeyEvent
+  code <- Reflex.Dom.Core.getKeyEvent
   liftIO $ KeyEvent <$> pure (fromIntegral code)
                     <*> js_uiEventGetCtrlKey (unKeyboardEvent e)
                     <*> js_uiEventGetShiftKey (unKeyboardEvent e)
