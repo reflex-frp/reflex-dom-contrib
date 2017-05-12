@@ -11,7 +11,7 @@ module Reflex.Dom.Contrib.Widgets.ScriptDependent
 import           Control.Concurrent          (forkIO, threadDelay)
 import           Control.Monad               (void)
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
-import           Reflex.Dom
+import           Reflex.Dom.Core
 #ifdef ghcjs_HOST_OS
 import           Control.Concurrent.STM.TVar
 import           Control.Monad.STM (atomically)

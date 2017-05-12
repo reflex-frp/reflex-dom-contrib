@@ -25,7 +25,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 Flag include-ghc-stubs
-  Description:   Generate GHC stub functions for GHCJS only functions. 
+  Description:   Generate GHC stub functions for GHCJS only functions.
                  This allows compilation under GHC when using GHCJS only functions.
   Default:       True
 
@@ -73,7 +73,7 @@ library
     random            >= 1.0  && < 1.2,
     readable          >= 0.3  && < 0.4,
     reflex            >= 0.5  && < 0.6,
-    reflex-dom        >= 0.4  && < 0.5,
+    reflex-dom-core   >= 0.4  && < 0.5,
     safe              >= 0.3  && < 0.4,
     stm               >= 2.1  && < 2.5,
     string-conv       >= 0.1  && < 0.2,

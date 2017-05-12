@@ -26,7 +26,7 @@ import           GHCJS.DOM.Types hiding (Event)
 #ifdef ghcjs_HOST_OS
 import           GHCJS.Types
 #endif
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 

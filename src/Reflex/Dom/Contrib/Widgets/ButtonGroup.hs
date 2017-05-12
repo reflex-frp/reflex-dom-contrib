@@ -24,7 +24,7 @@ import           Data.Text                  (Text)
 import           GHCJS.DOM.Element          (Element (..))
 import           GHCJS.DOM.HTMLInputElement (setChecked, HTMLInputElement (..))
 import           GHCJS.DOM.Types            (MonadJSM, castTo)
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------

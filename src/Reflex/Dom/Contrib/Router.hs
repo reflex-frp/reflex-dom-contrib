@@ -37,7 +37,7 @@ import           Data.Monoid                   ((<>))
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
 import           GHCJS.DOM.Types               (Location(..))
-import           Reflex.Dom                    hiding (EventName, Window)
+import           Reflex.Dom.Core               hiding (EventName, Window)
 import qualified URI.ByteString                as U
 import           GHCJS.DOM.Types               (MonadJSM)
 import           GHCJS.DOM.History             (History, back, forward, pushState)

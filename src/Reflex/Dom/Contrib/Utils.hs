@@ -43,7 +43,7 @@ import           GHCJS.DOM.Types hiding (Text, Event)
 import           GHCJS.Types
 #endif
 import           Reflex
-import           Reflex.Dom      hiding (Window, fromJSString)
+import           Reflex.Dom.Core hiding (Window, fromJSString)
 ------------------------------------------------------------------------------
 
 

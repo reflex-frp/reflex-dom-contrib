@@ -40,7 +40,7 @@ import           Data.Text (Text)
 import           Data.Time
 import           GHCJS.DOM.HTMLInputElement hiding (setValue)
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 import           Safe
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Utils

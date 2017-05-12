@@ -40,7 +40,7 @@ import qualified Data.Map as M
 import           Data.Monoid
 import           Data.Text (Text)
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 import           Reflex.Contrib.Interfaces
 import           Reflex.Contrib.Utils

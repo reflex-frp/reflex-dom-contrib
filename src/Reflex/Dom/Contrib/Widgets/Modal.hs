@@ -22,7 +22,7 @@ import           Data.Text (Text)
 import           Data.Monoid
 import           Reflex
 import           Reflex.Contrib.Utils
-import           Reflex.Dom
+import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 

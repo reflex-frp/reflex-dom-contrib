@@ -28,7 +28,7 @@ import qualified Data.Text as T
 import           Data.Time
 import           Data.Word
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Xhr
 ------------------------------------------------------------------------------
@@ -187,7 +187,7 @@ prune
     => Int
     -> PaginationCache k (PaginationResults v)
     -> PaginationCache k (PaginationResults v)
-prune n m = 
+prune n m =
     M.fromList $ map g $ groupBy ((==) `on` fst) $ sortBy (comparing fst) $
     drop n $ sortBy (comparing $ _prTimestamp . _pvValue . snd) $
     concatMap f $ M.toList m
