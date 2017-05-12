@@ -179,7 +179,6 @@ withHistory act = do
 -------------------------------------------------------------------------------
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
 getLoc :: (HasJSContext m, MonadJSM m) => m Location
-#if ghcjs_HOST_OS
 getLoc = do
   Just win <- currentWindow
 #if MIN_VERSION_ghcjs_dom(0,8,0)
@@ -189,9 +188,6 @@ getLoc = do
 #endif
     <- getLocation win
   return loc
-#else
-getLoc = error "getLocation' is only available to ghcjs"
-#endif
 
 
 -------------------------------------------------------------------------------
