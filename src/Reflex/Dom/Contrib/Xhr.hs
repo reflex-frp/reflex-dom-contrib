@@ -30,7 +30,7 @@ import qualified Data.Text as T
 import           Network.HTTP.Types.URI
 ------------------------------------------------------------------------------
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 

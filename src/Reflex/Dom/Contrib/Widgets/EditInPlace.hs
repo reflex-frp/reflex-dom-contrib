@@ -24,7 +24,7 @@ import qualified Data.Text as T
 import           GHCJS.DOM.Element
 import           GHCJS.DOM.HTMLElement
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Utils
 import           Reflex.Dom.Contrib.Widgets.Common
 import           GHCJS.DOM.Types (MonadJSM)

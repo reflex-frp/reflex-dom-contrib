@@ -27,7 +27,7 @@ import qualified Data.Map   as Map
 import           Data.Text  (Text)
 import           Data.Text  (Text)
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 {-# INLINABLE svgDynAttr' #-}

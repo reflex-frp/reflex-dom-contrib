@@ -11,7 +11,7 @@ import           Data.Set (Set)
 import qualified Data.Set as S
 import           Data.Text (Text)
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Widgets.Common
 ------------------------------------------------------------------------------
 

@@ -38,7 +38,7 @@ import qualified Data.Set                 as S
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
