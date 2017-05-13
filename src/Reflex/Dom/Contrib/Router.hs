@@ -31,9 +31,9 @@ module Reflex.Dom.Contrib.Router (
 
 ------------------------------------------------------------------------------
 import           Control.Lens                  ((&), (.~), (^.))
-import           Control.Monad.IO.Class        (liftIO)
 import qualified Data.ByteString.Char8         as BS
 import           Data.Monoid                   ((<>))
+import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
 import           GHCJS.DOM.Types               (Location(..))
@@ -43,13 +43,18 @@ import           GHCJS.DOM.Types               (MonadJSM)
 import           GHCJS.DOM.History             (History, back, forward, pushState)
 import           GHCJS.DOM                     (currentWindow)
 import           GHCJS.DOM.EventM              (on)
+import           GHCJS.DOM.EventTarget         (dispatchEvent_)
 import           GHCJS.DOM.Location            (getHref)
+import           GHCJS.DOM.PopStateEvent
 import           GHCJS.DOM.Window              (getHistory, getLocation)
 #if MIN_VERSION_ghcjs_dom(0,8,0)
 import           GHCJS.DOM.WindowEventHandlers (popState)
 #else
 import           GHCJS.DOM.Window              (popState)
 #endif
+import           GHCJS.Marshal.Pure            (pFromJSVal)
+import qualified Language.Javascript.JSaddle   as JS
+import           Language.Javascript.JSaddle   (JSM, liftJSM, Object(..))
 ------------------------------------------------------------------------------
 
 
@@ -78,7 +83,7 @@ route pushTo = do
           t
 #endif
     withHistory $ \h -> pushState h (0 :: Double) ("" :: T.Text) (newState :: Maybe T.Text)
-    liftIO dispatchEvent'
+    liftJSM dispatchEvent'
 
   locUpdates <- getPopState
   holdDyn loc0 locUpdates
@@ -208,13 +213,15 @@ getURI = do
     U.parseURI U.laxURIParserOptions $ T.encodeUtf8 l
 
 
-#if ghcjs_HOST_OS
-foreign import javascript unsafe "w = window; e = new PopStateEvent('popstate',{'view':window,'bubbles':true,'cancelable':true}); w['dispatchEvent'](e);"
-  dispatchEvent' :: IO ()
-#else
-dispatchEvent' :: IO ()
-dispatchEvent' = undefined
-#endif
+dispatchEvent' :: JSM ()
+dispatchEvent' = do
+  Just window <- currentWindow
+  obj@(Object o) <- JS.create
+  JS.objSetPropertyByName obj ("cancelable" :: Text) True
+  JS.objSetPropertyByName obj ("bubbles" :: Text) True
+  JS.objSetPropertyByName obj ("view" :: Text) window
+  event <- newPopStateEvent ("popstate" :: Text) $ Just $ pFromJSVal o
+  dispatchEvent_ window event
 
 
 -------------------------------------------------------------------------------
