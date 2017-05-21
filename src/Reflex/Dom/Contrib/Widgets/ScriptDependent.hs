@@ -19,8 +19,6 @@ import           Data.Function               (fix)
 import           Data.Time.Clock             (NominalDiffTime, diffUTCTime, getCurrentTime)
 import           GHCJS.Foreign.Callback
 import           Data.JSString (JSString, pack)
-#else
-import           Data.Time.Clock             (NominalDiffTime)
 #endif
 
 

@@ -33,15 +33,11 @@ module Reflex.Dom.Contrib.Utils
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
-import           Control.Monad
 import           Control.Monad.Reader
 import           Data.Map               (Map)
 import           Data.Text              (Text)
 import qualified Data.Text           as T
 import           GHCJS.DOM.Types hiding (Text, Event)
-#ifdef ghcjs_HOST_OS
-import           GHCJS.Types
-#endif
 import           Reflex
 import           Reflex.Dom.Core hiding (Window, fromJSString)
 ------------------------------------------------------------------------------
@@ -67,6 +63,7 @@ foreign import javascript unsafe
 #elif GHCSTUBS
 alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
 alertEvent = error "alertEvent: can only be used with GHCJS"
+js_alert :: MonadWidget t m => (a -> String) -> Event t a -> m ()
 js_alert = error "js_alert: can only be used with GHCJS"
 #endif
 
@@ -87,6 +84,7 @@ foreign import javascript unsafe
 #elif GHCSTUBS
 confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
 confirmEvent = error "confirmEvent: can only be used with GHCJS"
+js_confirm :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
 js_confirm = error "js_confirm: can only be used with GHCJS"
 #endif
 

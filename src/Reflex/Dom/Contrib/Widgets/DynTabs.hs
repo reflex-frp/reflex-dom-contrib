@@ -33,8 +33,6 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
 import           Data.Default
 import           Data.Map                 (Map)
 import qualified Data.Map                 as M
-import           Data.Monoid
-import qualified Data.Set                 as S
 import           Data.Text                (Text)
 import qualified Data.Text                as T
 import           Reflex

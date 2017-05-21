@@ -19,14 +19,14 @@ module Reflex.Dom.Contrib.KeyEvent
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Monad.Reader
 import           Data.Char
-import           GHCJS.DOM.EventM (event, EventM)
+import           GHCJS.DOM.EventM (EventM)
 import           GHCJS.DOM.Types hiding (Event)
 #ifdef ghcjs_HOST_OS
-import           GHCJS.Types
-#endif
+import           Control.Monad.Trans
+import           GHCJS.DOM.EventM (event)
 import           Reflex.Dom.Core
+#endif
 ------------------------------------------------------------------------------
 
 
