@@ -25,7 +25,6 @@ module Reflex.Dom.Contrib.Widgets.Svg where
 import           Data.Map   (Map)
 import qualified Data.Map   as Map
 import           Data.Text  (Text)
-import           Data.Text  (Text)
 import           Reflex
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
