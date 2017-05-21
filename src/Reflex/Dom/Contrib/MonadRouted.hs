@@ -34,18 +34,19 @@ module Reflex.Dom.Contrib.MonadRouted
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Lens               hiding (element)
 import           Control.Monad.Exception
 import           Control.Monad.Reader
 import           Control.Monad.Ref
 import           Control.Monad.State.Strict
 import           Data.Coerce
 import qualified Data.List                  as L
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding
-import           Reflex.Dom
+import           GHCJS.DOM.Types            (MonadJSM)
+import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Router
 import           Reflex.Host.Class
 import           URI.ByteString
@@ -161,9 +162,9 @@ instance MonadDynamicWriter t w m => MonadDynamicWriter t w (RouteT t m) where
 instance EventWriter t w m => EventWriter t w (RouteT t m) where
   tellEvent = lift . tellEvent
 
-instance HasWebView m => HasWebView (RouteT t m) where
-  type WebViewPhantom (RouteT t m) = WebViewPhantom m
-  askWebView = lift askWebView
+instance HasJSContext m => HasJSContext (RouteT t m) where
+  type JSContextPhantom (RouteT t m) = JSContextPhantom m
+  askJSContext = lift askJSContext
 
 instance (MonadHold t m, MonadFix m, MonadAdjust t m) => MonadAdjust t (RouteT t m) where
   runWithReplace a0 a' = RouteT $ runWithReplace (coerce a0) (coerceEvent a')
@@ -219,7 +220,7 @@ askUri = do
 
 -- | Path segments of original url
 askInitialSegments
-    :: (Monad m, MonadIO m, HasWebView m, MonadRouted t m)
+    :: (Monad m, MonadJSM m, HasJSContext m, MonadRouted t m)
     => m [PathSegment]
 askInitialSegments = do
   staticPath <- _routingInfoStaticPath <$> askRI
@@ -236,6 +237,9 @@ withPathSegment f = do
   let top = uniqDyn $ headMay . _locationPathSegments <$> locInfo
   localRI (\ri -> ri { _routingInfoLocation = dropSegment <$> _routingInfoLocation ri })
           (f top)
+  where
+    headMay [] = Nothing
+    headMay (x:_) = Just x
 
 -- | The latest full path as a text value.
 dynPath :: (Monad m, Reflex t, MonadRouted t m) => m (Dynamic t T.Text)
@@ -288,7 +292,7 @@ constructReq (LocationInfo u _ _ st) p =
       -- Disregard on parse error - parse error should only happen
       -- in response to a malformed redirect request
       fullUri' = either
-                 (trace ("URI Parse error for: " ++ show fullUriString) u)
+                 (\_ -> trace ("URI Parse error for: " ++ show fullUriString) u)
                  id
                  (parseURI laxURIParserOptions fullUriString)
       query'   = if uriQuery fullUri' == Query []
@@ -315,20 +319,14 @@ instance (MonadHold t m, MonadFix m, DomBuilder t m) => DomBuilder t (RouteT t m
   type DomBuilderSpace (RouteT t m) = DomBuilderSpace m
   element t cfg (RouteT child) = RouteT $ ReaderT $ \r -> DynamicWriterT $ do
     s <- get
-    let cfg' = liftElementConfig cfg
-    (e, (a, newS)) <- lift $ element t cfg' $ runStateT (unDynamicWriterT (runReaderT child r)) s
+    (e, (a, newS)) <- lift $ element t cfg $ runStateT (unDynamicWriterT (runReaderT child r)) s
     put newS
     return (e, a)
-  inputElement cfg = lift $ inputElement $ cfg
-    { _inputElementConfig_elementConfig = liftElementConfig $ _inputElementConfig_elementConfig cfg
-    }
-  textAreaElement cfg = lift $ textAreaElement $ cfg
-    { _textAreaElementConfig_elementConfig = liftElementConfig $ _textAreaElementConfig_elementConfig cfg
-    }
+  inputElement = lift . inputElement
+  textAreaElement = lift . textAreaElement
   selectElement cfg (RouteT child) = RouteT $ ReaderT $ \r -> DynamicWriterT $ do
     s <- get
-    let cfg' = cfg & selectElementConfig_elementConfig %~ liftElementConfig
-    (e, (a, newS)) <- lift $ selectElement cfg' $ runStateT (unDynamicWriterT (runReaderT child r)) s
+    (e, (a, newS)) <- lift $ selectElement cfg $ runStateT (unDynamicWriterT (runReaderT child r)) s
     put newS
     return (e, a)
 
