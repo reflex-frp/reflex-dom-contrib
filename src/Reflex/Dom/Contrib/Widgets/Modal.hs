@@ -119,7 +119,7 @@ mkModalBody header footer body = do
       dismiss <- header
       bodyRes <- divClass "modal-body" body
       (cancel, ok) <- footer bodyRes
-      let resE1 = tagPromptlyDyn bodyRes ok
+      let resE1 = tag (current bodyRes) ok
       let closem1 = leftmost
             [dismiss, cancel, () <$ ffilter isRight resE1]
       return (resE1, closem1)
