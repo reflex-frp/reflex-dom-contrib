@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE GADTs                    #-}
@@ -20,15 +19,11 @@ module Reflex.Dom.Contrib.Utils
   , putDebugLnE
   , listWithKeyAndSelection
   , waitUntilJust
-#if ghcjs_HOST_OS || GHCSTUBS
   , alertEvent
-  , js_alert
   , confirmEvent
-  , js_confirm
   , getWindowLocationPath
   , windowHistoryPushState
   , setWindowLoc
-#endif
   ) where
 
 ------------------------------------------------------------------------------
@@ -37,7 +32,12 @@ import           Control.Monad.Reader
 import           Data.Map               (Map)
 import           Data.Text              (Text)
 import qualified Data.Text           as T
+import           GHCJS.DOM              as DOM
+import           GHCJS.DOM.History      as DOM
+import           GHCJS.DOM.Location     as DOM
 import           GHCJS.DOM.Types hiding (Text, Event)
+import qualified GHCJS.DOM.Window       as DOM
+import qualified Language.Javascript.JSaddle as JS
 import           Reflex
 import           Reflex.Dom.Core hiding (Window, fromJSString)
 ------------------------------------------------------------------------------
@@ -51,85 +51,44 @@ tshow = T.pack . show
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript alert dialog box when an
 -- event fires with a message to display.
-#ifdef ghcjs_HOST_OS
-alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
-alertEvent str e = performEvent_ (alert <$> e)
-  where
-    alert a = liftIO $ js_alert $ toJSString $ str a
-
-foreign import javascript unsafe
-  "alert($1)"
-  js_alert :: JSString -> IO ()
-#elif GHCSTUBS
-alertEvent :: MonadWidget t m => (a -> String) -> Event t a -> m ()
-alertEvent = error "alertEvent: can only be used with GHCJS"
-js_alert :: MonadWidget t m => (a -> String) -> Event t a -> m ()
-js_alert = error "js_alert: can only be used with GHCJS"
-#endif
+alertEvent
+    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m))
+    => (a -> String) -> Event t a -> m ()
+alertEvent str e = do
+  Just window <- currentWindow
+  performEvent_ (DOM.alert window . str <$> e)
 
 ------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript confirmation dialog box
 -- when an event fires with a message to display.
-#ifdef ghcjs_HOST_OS
-confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
+confirmEvent
+    :: MonadWidget t m
+    => (a -> String) -> Event t a -> m (Event t a)
 confirmEvent str e = liftM (fmapMaybe id) $ performEvent (confirm <$> e)
   where
     confirm a = do
-        ok <- liftIO $ js_confirm $ toJSString $ str a
+        Just window <- currentWindow
+        ok <- DOM.confirm window $ Just $ str a
         return $ if ok then Just a else Nothing
-
-foreign import javascript unsafe
-  "confirm($1)"
-  js_confirm :: JSString -> IO Bool
-#elif GHCSTUBS
-confirmEvent :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
-confirmEvent = error "confirmEvent: can only be used with GHCJS"
-js_confirm :: MonadWidget t m => (a -> String) -> Event t a -> m (Event t a)
-js_confirm = error "js_confirm: can only be used with GHCJS"
-#endif
 
 ------------------------------------------------------------------------------
 -- | Gets the current path of the DOM Window (i.e., the contents of the
 -- address bar after the host, beginning with a "/").
 -- https://developer.mozilla.org/en-US/docs/Web/API/Location
-#ifdef ghcjs_HOST_OS
-getWindowLocationPath :: Window -> IO String
-getWindowLocationPath w = do
-    liftM fromJSString $ js_windowLocationPath $ unWindow w
-
-foreign import javascript unsafe
-  "$1['location']['pathname']"
-  js_windowLocationPath :: JSVal ->  IO JSString
-#elif GHCSTUBS
-getWindowLocationPath :: Window -> IO String
-getWindowLocationPath = error "getWindowLocationPath: can only be used with GHCJS"
-#endif
+getWindowLocationPath :: MonadJSM m => Window -> m String
+getWindowLocationPath = DOM.getPathname <=< DOM.getLocation
 
 ------------------------------------------------------------------------------
 -- | Pushes a new URL to the window history.
-#ifdef ghcjs_HOST_OS
-windowHistoryPushState :: String -> IO ()
-windowHistoryPushState = js_windowHistoryPushState . toJSString
+windowHistoryPushState :: MonadJSM m => String -> m ()
+windowHistoryPushState url = do
+  history <- DOM.getHistory =<< DOM.currentWindowUnchecked
+  DOM.pushState history JS.create (mempty :: JSString) $ Just url
 
-foreign import javascript unsafe
-  "window['history']['pushState']({},\"\",$1)"
-  js_windowHistoryPushState :: JSString -> IO ()
-#elif GHCSTUBS
-windowHistoryPushState :: String -> IO ()
-windowHistoryPushState = error "windowHistoryPushState: can only be used with GHCJS"
-#endif
-
-#ifdef ghcjs_HOST_OS
-setWindowLoc :: String -> IO ()
-setWindowLoc = js_setWindowLoc . toJSString
-
-foreign import javascript unsafe
-  "window['location'] = window['location']['origin'] + $1;"
-  js_setWindowLoc :: JSString -> IO ()
-#elif GHCSTUBS
-setWindowLoc :: String -> IO ()
-setWindowLoc = error "setWindowLoc: can only be used with GHCJS"
-#endif
+setWindowLoc :: MonadJSM m => String -> m ()
+setWindowLoc url = do
+  location <- DOM.getLocation =<< currentWindowUnchecked
+  DOM.setHref location url
 
 ------------------------------------------------------------------------------
 -- | A common form for widgetHold calls that mirrors the pattern seen in hold
