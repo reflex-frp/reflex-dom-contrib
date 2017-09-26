@@ -229,12 +229,12 @@ askInitialSegments = do
 
 -- | Changes the location bar to the value specified in the first parameter.
 withPathSegment
-    :: (Monad m, Reflex t, MonadRouted t m)
+    :: (Monad m, Reflex t, MonadRouted t m, MonadFix m, MonadHold t m)
     => (Dynamic t (Maybe PathSegment) -> m a)
     -> m a
 withPathSegment f = do
   locInfo <- _routingInfoLocation <$> askRI
-  let top = uniqDyn $ headMay . _locationPathSegments <$> locInfo
+  top <- holdUniqDyn $ headMay . _locationPathSegments <$> locInfo
   localRI (\ri -> ri { _routingInfoLocation = dropSegment <$> _routingInfoLocation ri })
           (f top)
   where
@@ -242,10 +242,10 @@ withPathSegment f = do
     headMay (x:_) = Just x
 
 -- | The latest full path as a text value.
-dynPath :: (Monad m, Reflex t, MonadRouted t m) => m (Dynamic t T.Text)
+dynPath :: (Monad m, Reflex t, MonadRouted t m, MonadFix m, MonadHold t m) => m (Dynamic t T.Text)
 dynPath = do
   duri  <- askUri
-  return $ uniqDyn $ uriToPath <$> duri
+  holdUniqDyn $ uriToPath <$> duri
 
 
 -- | Change the location bar by appending the specifid value to the dynamic path

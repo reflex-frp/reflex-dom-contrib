@@ -45,7 +45,7 @@ checkboxList showFunc filterFunc blanketEvent searchString onItems items = do
               if filterFunc search item
                 then mempty
                 else "style" =: "display:none"
-            attrs = uniqDyn $ mkAttrs <$> searchString
+        attrs <- holdUniqDyn $ mkAttrs <$> searchString
         elDynAttr "li" attrs $ el "label" $ do
           cb <- htmlCheckbox $ WidgetConfig
                   (leftmost [blanketEvent])
@@ -87,7 +87,7 @@ checkboxListView showFunc filterFunc updateFunc blanketEvent searchString
               if filterFunc search item
                 then mempty
                 else "style" =: "display:none"
-        let attrs = uniqDyn $ mkAttrs <$> searchString
+        attrs <- holdUniqDyn $ mkAttrs <$> searchString
         elDynAttr "li" attrs $ el "label" $ do
           cb <- htmlCheckbox $ WidgetConfig
                   (leftmost [blanketEvent])
