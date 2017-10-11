@@ -86,13 +86,13 @@ mkLocationInfo
   -> LocationInfo
 mkLocationInfo ctx r = LocationInfo r routeSegs ctxSegs ctx
   where
-    ctxSegs = T.splitOn "/" (cleanT ctx)
+    ctxSegs = contextPathParts ctx
 
     -- TODO: What should happen if the route fails to prefix-match the
     -- static path segment? Throw at error? Here we just return [] for
     -- dynamic segments
     routeSegs = fromMaybe [] .
-                L.stripPrefix (pathParts $ cleanT ctx) $
+                L.stripPrefix (contextPathParts ctx) $
                 uriPathParts r
 
 
@@ -281,7 +281,7 @@ redirectLocal pathPart = do
 --  they must be specified on every redirect event occurrence)
 constructReq :: LocationInfo -> Text -> URIRef Absolute
 constructReq (LocationInfo u _ _ st) p =
-  let fullPath = "/" <> st <> "/" <> cleanT p
+  let fullPath = "/" <> cleanT (st <> "/" <> cleanT p)
 
       -- Stringify (the original uri - query/frag) + (redirect)
       -- and reparse, to search for new query/frag
@@ -312,7 +312,7 @@ constructReq (LocationInfo u _ _ st) p =
 -- Prepend the static and context path parts
 appendingReq :: LocationInfo -> Text -> URIRef Absolute
 appendingReq (LocationInfo u _ ctx _) p =
-  let fullPath = "/" <> partsToPath ctx <> "/" <> cleanT p
+  let fullPath = "/" <> cleanT (partsToPath ctx <> "/" <> cleanT p)
   in  u { uriPath = encodeUtf8 fullPath }
 
 instance (MonadHold t m, MonadFix m, DomBuilder t m) => DomBuilder t (RouteT t m) where
@@ -353,6 +353,13 @@ uriToPath = partsToPath . uriPathParts
 
 pathParts :: T.Text -> [PathSegment]
 pathParts = T.splitOn "/" . cleanT
+
+contextPathParts :: T.Text -> [PathSegment]
+contextPathParts = splitOn' "/" . cleanT
+
+splitOn' :: Text -> Text -> [Text]
+splitOn' _ "" = [] -- instead of [""] as returned by T.splitOn
+splitOn' s x = T.splitOn s x
 
 cleanT :: T.Text -> T.Text
 cleanT = T.dropWhile (== '/')
