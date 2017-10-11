@@ -346,7 +346,7 @@ partsToPath :: [PathSegment] -> T.Text
 partsToPath = T.intercalate "/"
 
 uriPathParts :: URIRef Absolute -> [PathSegment]
-uriPathParts = T.splitOn "/" . cleanT . decodeUtf8 . uriPath
+uriPathParts = pathParts . decodeUtf8 . uriPath
 
 uriToPath :: URIRef Absolute -> T.Text
 uriToPath = partsToPath . uriPathParts
