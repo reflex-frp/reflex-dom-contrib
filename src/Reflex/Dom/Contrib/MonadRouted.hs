@@ -46,8 +46,8 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding
 import           GHCJS.DOM.Types            (MonadJSM)
-import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Router
+import           Reflex.Dom.Core
 import           Reflex.Host.Class
 import           URI.ByteString
 -------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ instance HasJSContext m => HasJSContext (RouteT t m) where
   type JSContextPhantom (RouteT t m) = JSContextPhantom m
   askJSContext = lift askJSContext
 
-instance (MonadHold t m, MonadFix m, MonadAdjust t m) => MonadAdjust t (RouteT t m) where
+instance (MonadHold t m, MonadFix m, Adjustable t m) => Adjustable t (RouteT t m) where
   runWithReplace a0 a' = RouteT $ runWithReplace (coerce a0) (coerceEvent a')
   traverseDMapWithKeyWithAdjust f dm0 dm' = RouteT $ traverseDMapWithKeyWithAdjust
     (\k v -> unRouteT (f k v)) (coerce dm0) (coerceEvent dm')
@@ -238,7 +238,7 @@ withPathSegment f = do
   localRI (\ri -> ri { _routingInfoLocation = dropSegment <$> _routingInfoLocation ri })
           (f top)
   where
-    headMay [] = Nothing
+    headMay []    = Nothing
     headMay (x:_) = Just x
 
 -- | The latest full path as a text value.
@@ -359,7 +359,7 @@ contextPathParts = splitOn' "/" . cleanT
 
 splitOn' :: Text -> Text -> [Text]
 splitOn' _ "" = [] -- instead of [""] as returned by T.splitOn
-splitOn' s x = T.splitOn s x
+splitOn' s x  = T.splitOn s x
 
 cleanT :: T.Text -> T.Text
 cleanT = T.dropWhile (== '/')
