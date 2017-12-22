@@ -168,6 +168,8 @@ instance HasJSContext m => HasJSContext (RouteT t m) where
 
 instance (MonadHold t m, MonadFix m, Adjustable t m) => Adjustable t (RouteT t m) where
   runWithReplace a0 a' = RouteT $ runWithReplace (coerce a0) (coerceEvent a')
+  traverseIntMapWithKeyWithAdjust f dm0 dm' = RouteT $ traverseIntMapWithKeyWithAdjust
+      (\k v -> unRouteT (f k v)) (coerce dm0) (coerceEvent dm')
   traverseDMapWithKeyWithAdjust f dm0 dm' = RouteT $ traverseDMapWithKeyWithAdjust
     (\k v -> unRouteT (f k v)) (coerce dm0) (coerceEvent dm')
   traverseDMapWithKeyWithAdjustWithMove f dm0 dm' = RouteT $ traverseDMapWithKeyWithAdjustWithMove
