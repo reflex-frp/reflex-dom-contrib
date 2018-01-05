@@ -317,7 +317,7 @@ appendingReq (LocationInfo u _ ctx _) p =
   let fullPath = "/" <> cleanT (partsToPath ctx <> "/" <> cleanT p)
   in  u { uriPath = encodeUtf8 fullPath }
 
-instance (MonadHold t m, MonadFix m, DomBuilder t m) => DomBuilder t (RouteT t m) where
+instance (MonadHold t m, MonadFix m, DomBuilder t m, NotReady t (RouteT t m)) => DomBuilder t (RouteT t m) where
   type DomBuilderSpace (RouteT t m) = DomBuilderSpace m
   element t cfg (RouteT child) = RouteT $ ReaderT $ \r -> DynamicWriterT $ do
     s <- get
