@@ -30,6 +30,7 @@ module Reflex.Dom.Contrib.Router (
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Monad.Fix             (MonadFix)
 import           Control.Lens                  ((&), (.~), (^.))
 import qualified Data.ByteString.Char8         as BS
 import           Data.Monoid                   ((<>))
@@ -69,7 +70,15 @@ import           Language.Javascript.JSaddle   (JSM, liftJSM, Object(..))
 --   But external calls to pushState that don't manually fire a popState
 --   won't be detected
 route
-  :: (HasJSContext m, MonadWidget t m)
+ :: forall t m.
+  ( MonadHold t m
+  , PostBuild t m
+  , TriggerEvent t m
+  , PerformEvent t m
+  , HasJSContext m
+  , HasJSContext (Performable m)
+  , MonadJSM m
+  , MonadJSM (Performable m))
   => Event t T.Text
   -> m (Dynamic t (U.URIRef U.Absolute))
 route pushTo = do
@@ -89,7 +98,16 @@ route pushTo = do
   holdDyn loc0 locUpdates
 
 route'
-  :: forall t m a b. MonadWidget t m
+ :: forall t m a b.
+  ( MonadHold t m
+  , PostBuild t m
+  , TriggerEvent t m
+  , PerformEvent t m
+  , HasJSContext m
+  , HasJSContext (Performable m)
+  , MonadJSM m
+  , MonadJSM (Performable m)
+  , MonadFix m)
   => (URI -> a -> URI)
   -> (URI -> b)
   -> Event t a
@@ -104,7 +122,17 @@ route' encode decode routeUpdate = do
 -- | Route a single page app according to the part of the path after
 --   pathBase
 partialPathRoute
-  :: forall t m. MonadWidget t m
+ :: forall t m.
+  ( MonadHold t m
+  , PostBuild t m
+  , DomBuilder t m
+  , TriggerEvent t m
+  , PerformEvent t m
+  , HasJSContext m
+  , HasJSContext (Performable m)
+  , MonadJSM m
+  , MonadJSM (Performable m)
+  , MonadFix m)
   => T.Text  -- ^ The path segments not related to SPA routing
              --   (leading '/' will be added automaticaly)
   -> Event t T.Text -- ^ Updates to the path segments used for routing
@@ -144,7 +172,11 @@ uriOrigin r = T.decodeUtf8 $ U.serializeURIRef' r'
 
 
 -------------------------------------------------------------------------------
-getPopState :: (MonadWidget t m) => m (Event t URI)
+getPopState
+ :: forall t m.
+  ( MonadHold t m
+  , TriggerEvent t m
+  , MonadJSM m) => m (Event t URI)
 getPopState = do
   Just window <- currentWindow
   wrapDomEventMaybe window (`on` popState) $ do
@@ -235,4 +267,3 @@ pfxErr :: URI -> T.Text -> String
 pfxErr pn pathBase =
   T.unpack $ "Encountered path (" <> T.decodeUtf8 (U.serializeURIRef' pn)
             <> ") without expected prefix (" <> pathBase <> ")"
-
