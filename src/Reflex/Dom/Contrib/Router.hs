@@ -37,12 +37,16 @@ import           Data.Monoid                   ((<>))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
-import           GHCJS.DOM.Types               (Location(..))
+import           GHCJS.Foreign                 (isFunction)
+import           GHCJS.DOM.Types               (Location(..), PopStateEvent(..))
+import qualified GHCJS.DOM.Types               as DOM
 import           Reflex.Dom.Core               hiding (EventName, Window)
 import qualified URI.ByteString                as U
-import           GHCJS.DOM.Types               (MonadJSM)
+import           GHCJS.DOM.Types               (uncheckedCastTo, MonadJSM)
 import           GHCJS.DOM.History             (History, back, forward, pushState)
-import           GHCJS.DOM                     (currentWindow)
+import           GHCJS.DOM                     (currentWindowUnchecked, currentDocumentUnchecked)
+import           GHCJS.DOM.Document            (createEvent)
+import           GHCJS.DOM.Event               (initEvent)
 import           GHCJS.DOM.EventM              (on)
 import           GHCJS.DOM.EventTarget         (dispatchEvent_)
 import           GHCJS.DOM.Location            (getHref)
@@ -55,7 +59,7 @@ import           GHCJS.DOM.Window              (popState)
 #endif
 import           GHCJS.Marshal.Pure            (pFromJSVal)
 import qualified Language.Javascript.JSaddle   as JS
-import           Language.Javascript.JSaddle   (JSM, liftJSM, Object(..))
+import           Language.Javascript.JSaddle   (ghcjsPure, JSM, liftJSM, Object(..))
 ------------------------------------------------------------------------------
 
 
@@ -178,7 +182,7 @@ getPopState
   , TriggerEvent t m
   , MonadJSM m) => m (Event t URI)
 getPopState = do
-  Just window <- currentWindow
+  window <- currentWindowUnchecked
   wrapDomEventMaybe window (`on` popState) $ do
 #if MIN_VERSION_ghcjs_dom(0,8,0)
     loc
@@ -203,7 +207,7 @@ goBack = withHistory back
 -------------------------------------------------------------------------------
 withHistory :: (HasJSContext m, MonadJSM m) => (History -> m a) -> m a
 withHistory act = do
-  Just w <- currentWindow
+  w <- currentWindowUnchecked
 #if MIN_VERSION_ghcjs_dom(0,8,0)
   h
 #else
@@ -217,7 +221,7 @@ withHistory act = do
 -- | (Unsafely) get the 'GHCJS.DOM.Location.Location' of a window
 getLoc :: (HasJSContext m, MonadJSM m) => m Location
 getLoc = do
-  Just win <- currentWindow
+  win <- currentWindowUnchecked
 #if MIN_VERSION_ghcjs_dom(0,8,0)
   loc
 #else
@@ -247,12 +251,20 @@ getURI = do
 
 dispatchEvent' :: JSM ()
 dispatchEvent' = do
-  Just window <- currentWindow
+  window <- currentWindowUnchecked
   obj@(Object o) <- JS.create
   JS.objSetPropertyByName obj ("cancelable" :: Text) True
   JS.objSetPropertyByName obj ("bubbles" :: Text) True
   JS.objSetPropertyByName obj ("view" :: Text) window
-  event <- newPopStateEvent ("popstate" :: Text) $ Just $ pFromJSVal o
+  event <- JS.jsg ("PopStateEvent" :: Text) >>= ghcjsPure . isFunction >>= \case
+    True -> newPopStateEvent ("popstate" :: Text) $ Just $ pFromJSVal o
+    False -> do
+      doc <- currentDocumentUnchecked
+      event <- createEvent doc ("PopStateEvent" :: Text)
+      initEvent event ("popstate" :: Text) True True
+      JS.objSetPropertyByName obj ("view" :: Text) window
+      return $ uncheckedCastTo PopStateEvent event
+
   dispatchEvent_ window event
 
 
