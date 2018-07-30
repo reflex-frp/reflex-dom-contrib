@@ -47,7 +47,7 @@ instance CssClassRep a => CssClassRep (Maybe a) where
 -- still needs to add its own classes.  Problems can arise if there are
 -- overlaps.
 newtype CssClass = CssClass { unCssClass :: Set Text }
-  deriving (Eq, Ord, Monoid, Show)
+  deriving (Eq, Ord, Semigroup, Monoid, Show)
 
 instance Default CssClass where
     def = mempty

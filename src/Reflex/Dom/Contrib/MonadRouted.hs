@@ -337,8 +337,11 @@ instance (MonadHold t m, MonadFix m, DomBuilder t m, NotReady t (RouteT t m)) =>
 -- Utility wrapper to collect route events with 'leftmost'
 newtype LMost t a = LMost { getLMost :: Event t a}
 
+instance Reflex t => Semigroup (LMost t a) where
+  LMost a <> LMost b = LMost (leftmost [a,b])
+
 instance Reflex t => Monoid (LMost t a) where
-  LMost a `mappend` LMost b = LMost (leftmost [a,b])
+  mappend = (<>)
   mempty = LMost never
 
 
