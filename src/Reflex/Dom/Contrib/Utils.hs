@@ -59,6 +59,16 @@ alertEvent str e = do
   performEvent_ (DOM.alert window . str <$> e)
 
 ------------------------------------------------------------------------------
+-- | Convenient function that pops up multiple javascript alert dialog box
+-- sequentially when an event fires with messages to display.
+alertEvents
+    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m))
+    => (a -> [String]) -> Event t a -> m ()
+alertEvents str e = do
+  Just window <- currentWindow
+  performEvent_ (mapM_ (DOM.alert window) <$> str <$> e)
+
+------------------------------------------------------------------------------
 -- | Convenient function that pops up a javascript confirmation dialog box
 -- when an event fires with a message to display.
 confirmEvent
