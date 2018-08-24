@@ -24,7 +24,7 @@ repository](https://github.com/reflex-frp/reflex-platform). Assuming you cloned 
 in your home directory you can then do this:
 
     cd path/to/reflex-dom-contrib
-    ~/reflex-platform/work-on ghcjs ./.
+    ~/reflex-platform/scripts/work-on ghcjs ./.
 
 That will put you in a nix-shell with the necessary environment. Then you can
 build like this:
