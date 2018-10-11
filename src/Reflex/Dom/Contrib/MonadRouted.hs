@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
@@ -43,9 +42,7 @@ import           Data.Coerce
 import qualified Data.List                  as L
 import           Data.Maybe
 import           Data.Monoid
-#if !MIN_VERSION_base(4,11,0)
-import           Data.Semigroup             (Semigroup(..))
-#endif
+import qualified Data.Semigroup             as Sem
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding
@@ -341,14 +338,12 @@ instance (MonadHold t m, MonadFix m, DomBuilder t m, NotReady t (RouteT t m)) =>
 -- Utility wrapper to collect route events with 'leftmost'
 newtype LMost t a = LMost { getLMost :: Event t a}
 
-instance Reflex t => Semigroup (LMost t a) where
+instance Reflex t => Sem.Semigroup (LMost t a) where
   LMost a <> LMost b = LMost (leftmost [a,b])
 
 instance Reflex t => Monoid (LMost t a) where
   mempty = LMost never
-#if !MIN_VERSION_base(4,11,0)
-  mappend = (<>)
-#endif
+  mappend = (Sem.<>)
 
 -------------------------------------------------------------------------------
 -- Utility functions

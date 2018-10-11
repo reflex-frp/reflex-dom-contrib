@@ -1,6 +1,6 @@
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
@@ -16,9 +16,7 @@ import           Data.Default
 import           Data.Map        (Map)
 import qualified Data.Map        as M
 import           Data.Monoid
-#if !MIN_VERSION_base(4,11,0)
-import           Data.Semigroup  (Semigroup(..))
-#endif
+import qualified Data.Semigroup  as Sem
 import           Data.Set        (Set)
 import qualified Data.Set        as S
 import           Data.String
@@ -51,16 +49,7 @@ instance CssClassRep a => CssClassRep (Maybe a) where
 -- still needs to add its own classes.  Problems can arise if there are
 -- overlaps.
 newtype CssClass = CssClass { unCssClass :: Set Text }
-  deriving (Eq, Ord, Show)
-
-instance Semigroup CssClass where
-  CssClass a <> CssClass b = CssClass (a <> b)
-
-instance Monoid CssClass where
-  mempty = CssClass mempty
-#if !MIN_VERSION_base(4,11,0)
-  mappend = (<>)
-#endif
+  deriving (Eq, Ord, Sem.Semigroup, Monoid, Show)
 
 instance Default CssClass where
     def = mempty
