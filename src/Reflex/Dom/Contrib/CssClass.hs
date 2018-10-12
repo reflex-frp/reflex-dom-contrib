@@ -13,15 +13,17 @@ module Reflex.Dom.Contrib.CssClass where
 
 ------------------------------------------------------------------------------
 import           Data.Default
-import           Data.Map     (Map)
-import qualified Data.Map     as M
+import           Data.Map        (Map)
+import qualified Data.Map        as M
 import           Data.Monoid
-import           Data.Set     (Set)
-import qualified Data.Set     as S
+import qualified Data.Semigroup  as Sem
+import           Data.Set        (Set)
+import qualified Data.Set        as S
 import           Data.String
-import           Data.Text    (Text)
-import qualified Data.Text    as T
+import           Data.Text       (Text)
+import qualified Data.Text       as T
 import           Reflex.Dom.Core
+
 ------------------------------------------------------------------------------
 
 class CssClassRep a where
@@ -47,7 +49,7 @@ instance CssClassRep a => CssClassRep (Maybe a) where
 -- still needs to add its own classes.  Problems can arise if there are
 -- overlaps.
 newtype CssClass = CssClass { unCssClass :: Set Text }
-  deriving (Eq, Ord, Monoid, Show)
+  deriving (Eq, Ord, Sem.Semigroup, Monoid, Show)
 
 instance Default CssClass where
     def = mempty

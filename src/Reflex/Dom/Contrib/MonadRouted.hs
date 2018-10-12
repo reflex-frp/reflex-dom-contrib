@@ -42,6 +42,7 @@ import           Data.Coerce
 import qualified Data.List                  as L
 import           Data.Maybe
 import           Data.Monoid
+import qualified Data.Semigroup             as Sem
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T
 import           Data.Text.Encoding
@@ -337,10 +338,12 @@ instance (MonadHold t m, MonadFix m, DomBuilder t m, NotReady t (RouteT t m)) =>
 -- Utility wrapper to collect route events with 'leftmost'
 newtype LMost t a = LMost { getLMost :: Event t a}
 
-instance Reflex t => Monoid (LMost t a) where
-  LMost a `mappend` LMost b = LMost (leftmost [a,b])
-  mempty = LMost never
+instance Reflex t => Sem.Semigroup (LMost t a) where
+  LMost a <> LMost b = LMost (leftmost [a,b])
 
+instance Reflex t => Monoid (LMost t a) where
+  mempty = LMost never
+  mappend = (Sem.<>)
 
 -------------------------------------------------------------------------------
 -- Utility functions
