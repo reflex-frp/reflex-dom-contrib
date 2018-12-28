@@ -74,26 +74,31 @@ classAttr c = if S.null (unCssClass c)
                 then mempty
                 else M.singleton "class" (renderClass c)
 
-elKlass :: MonadWidget t m => Text -> CssClass -> m a -> m a
+elKlass :: DomBuilder t m => Text -> CssClass -> m a -> m a
 elKlass e k = elAttr e (classAttr k)
 
 elKlass'
-    :: MonadWidget t m
+    :: DomBuilder t m
     => Text
     -> CssClass
     -> m a
-    -> m (Element EventResult GhcjsDomSpace t, a)
+    -> m (Element EventResult (DomBuilderSpace m) t, a)
 elKlass' e k = elAttr' e (classAttr k)
 
-elDynKlass :: MonadWidget t m => Text -> Dynamic t CssClass -> m a -> m a
+elDynKlass
+  :: (DomBuilder t m, PostBuild t m)
+  => Text
+  -> Dynamic t CssClass
+  -> m a
+  -> m a
 elDynKlass e k = elDynAttr e (classAttr <$> k)
 
 elDynKlass'
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => Text
     -> Dynamic t CssClass
     -> m a
-    -> m (El t, a)
+    -> m (Element EventResult (DomBuilderSpace m) t, a)
 elDynKlass' e k = elDynAttr' e (classAttr <$> k)
 
 ------------------------------------------------------------------------------
