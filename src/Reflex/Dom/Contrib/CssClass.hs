@@ -102,12 +102,16 @@ elDynKlass'
 elDynKlass' e k = elDynAttr' e (classAttr <$> k)
 
 ------------------------------------------------------------------------------
--- | The correct way to add a CssClass to an existing Map of attributes,
--- taking into account the possibility that the map already has some classes.
+-- | The correct way to add a CssClass to an existing Map of attributes, taking
+-- into account the possibility that the map already has some classes.
+--
+--   We are generic in the key, to support reflex-dom `AttributeName` Maps as
+--   well. (Used in `ElementConfig`.)
 addToClassAttr
-    :: CssClass
-    -> Map Text Text
-    -> Map Text Text
+    :: (IsString key, Ord key) 
+    => CssClass
+    -> Map key Text
+    -> Map key Text
 addToClassAttr cls = M.alter (Just . renderClass . f) "class"
   where
     f Nothing  = cls
