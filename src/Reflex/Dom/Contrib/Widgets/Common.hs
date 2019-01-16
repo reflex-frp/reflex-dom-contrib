@@ -506,6 +506,13 @@ listDropdown xs f attrs defS = do
 
 ------------------------------------------------------------------------------
 -- | More efficient dropdown.
+-- The dropdown function in reflex-dom takes its list of items as a `Dynamic t (Map k Text)`,
+-- but internally, turns that Map into list of pairs using toList, pairs the values and text with an Int index,
+-- and then calls fromList to allocate both a Bimap and a Map of this indexed map. This requires two lookups
+-- and calling T.readMaybe to get the haskell value out of the selected item.
+-- This function circumvents this by taking a `Dynamic t (Bimap k Text)` instead of a `Dynamic t (Map k Text)`
+-- and using the Text for the value attribute instead of an Int. Then, only one lookup is needed and the behavior
+-- of the dropdown is more predictable.
 dropdownContrib :: forall k t m. (DomBuilder t m, MonadFix m, MonadHold t m, PostBuild t m, Ord k) => 
   k -> Dynamic t (Bimap k Text) -> DropdownConfig t k -> m (Dropdown t k)
 dropdownContrib k0 options (DropdownConfig setK attrs) = do
