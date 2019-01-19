@@ -28,10 +28,13 @@ module Reflex.Dom.Contrib.Widgets.Common where
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Fix
 import           Data.Default
 import           Data.List
 import           Data.Map (Map)
+import           Data.Bimap (Bimap)
 import qualified Data.Map as M
+import qualified Data.Bimap as BM
 import           Data.Maybe
 import           Data.Monoid
 import           Data.Readable
@@ -500,4 +503,34 @@ listDropdown xs f attrs defS = do
       opts = (M.insert 0 defS) . M.map f <$> m
   sel <- liftM _dropdown_value $ dropdown 0 opts $ def & attributes .~ attrs
   return $ zipDynWith M.lookup sel m
+
+------------------------------------------------------------------------------
+-- | More efficient dropdown.
+-- The dropdown function in reflex-dom takes its list of items as a `Dynamic t (Map k Text)`,
+-- but internally, turns that Map into list of pairs using toList, pairs the values and text with an Int index,
+-- and then calls fromList to allocate both a Bimap and a Map of this indexed map. This requires two lookups
+-- and calling T.readMaybe to get the haskell value out of the selected item.
+-- This function circumvents this by taking a `Dynamic t (Bimap k Text)` instead of a `Dynamic t (Map k Text)`
+-- and using the Text for the value attribute instead of an Int. Then, only one lookup is needed and the behavior
+-- of the dropdown is more predictable.
+dropdownContrib :: forall k t m. (DomBuilder t m, MonadFix m, MonadHold t m, PostBuild t m, Ord k) => 
+  k -> Dynamic t (Bimap k Text) -> DropdownConfig t k -> m (Dropdown t k)
+dropdownContrib k0 options (DropdownConfig setK attrs) = do
+  defaultKey <- holdDyn k0 setK
+  modifyAttrs <- dynamicAttributesToModifyAttributes attrs
+  let indexedOptions :: Dynamic t (Map k Text)
+      indexedOptions = BM.toMap <$> options
+  let cfg = def
+        & selectElementConfig_elementConfig . elementConfig_modifyAttributes .~ fmap mapKeysToAttributeName modifyAttrs
+        & selectElementConfig_setValue .~ attachPromptlyDynWithMaybe (flip BM.lookup) options setK
+  (eRaw, _) <- selectElement cfg $ listWithKey indexedOptions $ \k v -> do
+    let optionAttrs = (\dk v' -> "value" =: v' <> if dk == k then "selected" =: "selected" else mempty) <$> defaultKey <*> v
+    elDynAttr "option" optionAttrs $ dynText v
+  let eChange :: Event t k
+      eChange = attachPromptlyDynWithMaybe safeLookupR options $ _selectElement_change eRaw
+  dValue <- holdDyn k0 $ leftmost [eChange, setK]
+  pure $ Dropdown dValue eChange
+  where
+  safeLookupR :: (Ord x, Ord y) => Bimap x y -> y -> Maybe x
+  safeLookupR bi a = BM.lookupR a bi
 
