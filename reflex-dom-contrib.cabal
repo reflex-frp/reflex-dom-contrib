@@ -36,6 +36,7 @@ library
     Reflex.Contrib.Interfaces
     Reflex.Contrib.Utils
     Reflex.Dom.Contrib.CssClass
+    Reflex.Dom.Contrib.Event
     Reflex.Dom.Contrib.Geoposition
     Reflex.Dom.Contrib.KeyEvent
     Reflex.Dom.Contrib.MonadRouted
