@@ -39,30 +39,6 @@ holdEvent_ ::
      (Dom.DomBuilder t m, MonadHold t m) => Event t a -> (a -> m b) -> m ()
 holdEvent_ = fmap void . holdEvent undefined -- we throw away the value
 
--- | postbuild is imediate for sampling, adding a delay makes it after
---   widget completes see: https://github.com/reflex-frp/reflex-dom-semui/issues/18
-getReady ::
-     ( PostBuild t m
-     , PerformEvent t m
-     , TriggerEvent t m
-     , MonadIO (Performable m)
-     )
-  => m (Event t ())
-getReady = getPostBuild >>= delay 0
-
--- | attach the ready event to the widget, which fires once it's usuable
-withReadyEvt ::
-     ( PostBuild t m
-     , PerformEvent t m
-     , TriggerEvent t m
-     , MonadIO (Performable m)
-     )
-  => m b
-  -> m (b, Event t ())
-withReadyEvt mb = do
-  res <- mb
-  evt <- getReady
-  pure (res, evt)
 
 -- | Get rid of a dynimc around a tupple of events,
 --   common sense says we should be able to do this for any traversable,
