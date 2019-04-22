@@ -1,5 +1,5 @@
 name:                reflex-dom-contrib
-version:             0.5.1.0
+version:             0.5.2.0
 synopsis:            A place to experiment with infrastructure and common code for reflex applications
 description:         This library is intended to be a public playground for
                      developing infrastructure, higher level APIs, and widget
@@ -78,8 +78,8 @@ library
     random                 >= 1.0    && < 1.2,
     readable               >= 0.3    && < 0.4,
     ref-tf                 >= 0.4    && < 0.5,
-    reflex                 >= 0.5    && < 0.6,
-    reflex-dom-core        >= 0.4    && < 0.5,
+    reflex                 >= 0.5    && < 0.7,
+    reflex-dom-core        >= 0.4    && < 0.6,
     safe                   >= 0.3    && < 0.4,
     stm                    >= 2.1    && < 2.6,
     string-conv            >= 0.1    && < 0.2,
