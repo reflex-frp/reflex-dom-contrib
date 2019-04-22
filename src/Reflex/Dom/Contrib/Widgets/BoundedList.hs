@@ -35,10 +35,9 @@ import           Control.Applicative
 import           Control.Monad
 import           Data.Bifunctor
 import           Data.List
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Data.Monoid
-import           Data.Text (Text)
+import           Data.Map                  (Map)
+import qualified Data.Map                  as M
+import           Data.Text                 (Text)
 import           Reflex
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
@@ -63,7 +62,7 @@ type BornAt = Int
 
 ------------------------------------------------------------------------------
 limitMap :: Ord k => Map k v -> Limit -> Map k v
-limitMap m Nothing = m
+limitMap m Nothing    = m
 limitMap m (Just lim) = M.fromList $ take lim $ M.toList m
 
 
@@ -185,7 +184,7 @@ boundedSelectList0 itemLimit curSelected updateEvent getKey shouldRunExpensive
     isAlreadyPresent fieldListMap cur =
         case M.lookup (getKey cur) fieldListMap of
           Nothing -> Just cur
-          Just _ -> shouldRunExpensive cur
+          Just _  -> shouldRunExpensive cur
 
 
 ------------------------------------------------------------------------------
@@ -226,7 +225,7 @@ boundedSelectList itemLimit curSelected updateEvent getKey shouldRunExpensive
     getCurrent cur listMap =
         case M.lookup (getKey cur) listMap of
           Nothing -> defaultVal
-          Just v -> v
+          Just v  -> v
 
 
 ------------------------------------------------------------------------------
@@ -243,7 +242,7 @@ mkHiding staticAttrs w active = do
     let attrs = mkAttrs <$> active
     elDynAttr "div" attrs w
   where
-    mkAttrs True = staticAttrs
+    mkAttrs True  = staticAttrs
     mkAttrs False = staticAttrs <> "style" =: "display:none"
 
 

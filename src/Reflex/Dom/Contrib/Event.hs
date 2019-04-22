@@ -8,6 +8,7 @@ import           Control.Applicative      (empty)
 import           Control.Monad            (void)
 import           Control.Monad.IO.Class   (MonadIO)
 import           Data.Time.Clock          (NominalDiffTime)
+import           Data.Witherable
 import           Reflex
 import qualified Reflex.Dom.Builder.Class as Dom
 import qualified Reflex.Dom.Old           as Dom
@@ -17,7 +18,7 @@ eventJoin :: (Reflex t, MonadHold t m) => Event t (Event t a) -> m (Event t a)
 eventJoin = switchHold never
 
 -- | Block those nothing events and only let trough just a's
-noNothing :: FunctorMaybe f => f (Maybe a) -> f a
+noNothing :: (Filterable f, FunctorMaybe f) => f (Maybe a) -> f a
 noNothing = fmapMaybe id
 
 -- | Do something monadic with an event val

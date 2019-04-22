@@ -17,13 +17,12 @@ module Reflex.Dom.Contrib.Widgets.Modal where
 ------------------------------------------------------------------------------
 import           Data.Bifunctor
 import           Data.Either
-import           Data.Map (Map)
-import           Data.Text (Text)
-import           Data.Monoid
+import           Data.Map                 (Map)
+import           Data.Text                (Text)
 import           Reflex
 import           Reflex.Contrib.Utils
-import           Reflex.Dom.Core
 import           Reflex.Dom.Contrib.Utils
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 
@@ -72,7 +71,7 @@ hidingModal strategy cfg showm body = do
     visibility False =
       case strategy of
         VisibilityInvisible -> "style" =: "visibility:hidden; display:block;"
-        DisplayNone -> "style" =: "display:none;"
+        DisplayNone         -> "style" =: "display:none;"
 
 
 ------------------------------------------------------------------------------

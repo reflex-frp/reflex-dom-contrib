@@ -4,8 +4,7 @@
 module Reflex.Dom.Contrib.Widgets.DynamicList where
 
 ------------------------------------------------------------------------------
-import qualified Data.Map as M
-import           Data.Monoid
+import qualified Data.Map        as M
 import           Reflex
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------

@@ -1,12 +1,12 @@
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE QuasiQuotes         #-}
-{-# LANGUAGE RecursiveDo         #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TemplateHaskell     #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Reflex.Dom.Contrib.Widgets.ButtonGroup (
   radioGroup,
@@ -15,15 +15,15 @@ module Reflex.Dom.Contrib.Widgets.ButtonGroup (
 ) where
 
 ------------------------------------------------------------------------------
-import           Control.Monad.IO.Class     (liftIO)
-import           Data.Bool                  (bool)
-import qualified Data.Map                   as Map
-import           Data.Maybe                 (fromMaybe, listToMaybe)
-import           Data.Monoid                ((<>))
-import           Data.Text                  (Text)
-import           GHCJS.DOM.Element          (Element (..))
-import           GHCJS.DOM.HTMLInputElement (setChecked, HTMLInputElement (..))
-import           GHCJS.DOM.Types            (MonadJSM, castTo)
+import           Control.Monad.IO.Class            (liftIO)
+import           Data.Bool                         (bool)
+import qualified Data.Map                          as Map
+import           Data.Maybe                        (fromMaybe, listToMaybe)
+import           Data.Text                         (Text)
+import           GHCJS.DOM.Element                 (Element (..))
+import           GHCJS.DOM.HTMLInputElement        (HTMLInputElement (..),
+                                                    setChecked)
+import           GHCJS.DOM.Types                   (MonadJSM, castTo)
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 import           Reflex.Dom.Contrib.Widgets.Common

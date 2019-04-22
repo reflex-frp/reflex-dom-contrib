@@ -29,17 +29,16 @@ import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Fix
+import           Data.Bimap                 (Bimap)
+import qualified Data.Bimap                 as BM
 import           Data.Default
 import           Data.List
-import           Data.Map (Map)
-import           Data.Bimap (Bimap)
-import qualified Data.Map as M
-import qualified Data.Bimap as BM
+import           Data.Map                   (Map)
+import qualified Data.Map                   as M
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
-import           Data.Text (Text)
+import           Data.Text                  (Text)
 import           Data.Time
 import           GHCJS.DOM.HTMLInputElement hiding (setValue)
 import           Reflex
@@ -62,9 +61,9 @@ class HasChange a where
 -- We may want to change this in the future, but it seems like a reasonable
 -- start for now.
 data WidgetConfig t a
-    = WidgetConfig { _widgetConfig_setValue :: Event t a
+    = WidgetConfig { _widgetConfig_setValue     :: Event t a
                    , _widgetConfig_initialValue :: a
-                   , _widgetConfig_attributes :: Dynamic t (Map Text Text)
+                   , _widgetConfig_attributes   :: Dynamic t (Map Text Text)
                    }
 
 instance Reflex t => Functor (WidgetConfig t) where
@@ -114,9 +113,9 @@ class IsWidget w where
 ------------------------------------------------------------------------------
 -- | A general-purpose widget return value.
 data Widget0 t a = Widget0
-    { _widget0_value    :: Dynamic t a
+    { _widget0_value  :: Dynamic t a
       -- ^ The authoritative value for this widget.
-    , _widget0_change   :: Event t a
+    , _widget0_change :: Event t a
       -- ^ Event that fires when the widget changes internally (not via a
       -- setValue event).
     }

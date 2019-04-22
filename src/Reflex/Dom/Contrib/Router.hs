@@ -30,36 +30,39 @@ module Reflex.Dom.Contrib.Router (
   ) where
 
 ------------------------------------------------------------------------------
-import           Control.Monad.Fix             (MonadFix)
 import           Control.Lens                  ((&), (.~), (^.))
+import           Control.Monad.Fix             (MonadFix)
 import qualified Data.ByteString.Char8         as BS
-import           Data.Monoid                   ((<>))
 import           Data.Text                     (Text)
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
-import           GHCJS.Foreign                 (isFunction)
-import           GHCJS.DOM.Types               (Location(..), PopStateEvent(..))
-import qualified GHCJS.DOM.Types               as DOM
-import           Reflex.Dom.Core               hiding (EventName, Window)
-import qualified URI.ByteString                as U
-import           GHCJS.DOM.Types               (uncheckedCastTo, MonadJSM)
-import           GHCJS.DOM.History             (History, back, forward, pushState)
-import           GHCJS.DOM                     (currentWindowUnchecked, currentDocumentUnchecked)
+import           GHCJS.DOM                     (currentDocumentUnchecked,
+                                                currentWindowUnchecked)
 import           GHCJS.DOM.Document            (createEvent)
 import           GHCJS.DOM.Event               (initEvent)
 import           GHCJS.DOM.EventM              (on)
 import           GHCJS.DOM.EventTarget         (dispatchEvent_)
+import           GHCJS.DOM.History             (History, back, forward,
+                                                pushState)
 import           GHCJS.DOM.Location            (getHref)
 import           GHCJS.DOM.PopStateEvent
+import           GHCJS.DOM.Types               (Location (..),
+                                                PopStateEvent (..))
+import           GHCJS.DOM.Types               (MonadJSM, uncheckedCastTo)
+import qualified GHCJS.DOM.Types               as DOM
 import           GHCJS.DOM.Window              (getHistory, getLocation)
+import           GHCJS.Foreign                 (isFunction)
+import           Reflex.Dom.Core               hiding (EventName, Window)
+import qualified URI.ByteString                as U
 #if MIN_VERSION_ghcjs_dom(0,8,0)
 import           GHCJS.DOM.WindowEventHandlers (popState)
 #else
 import           GHCJS.DOM.Window              (popState)
 #endif
 import           GHCJS.Marshal.Pure            (pFromJSVal)
+import           Language.Javascript.JSaddle   (JSM, Object (..), ghcjsPure,
+                                                liftJSM)
 import qualified Language.Javascript.JSaddle   as JS
-import           Language.Javascript.JSaddle   (ghcjsPure, JSM, liftJSM, Object(..))
 ------------------------------------------------------------------------------
 
 
@@ -271,7 +274,7 @@ dispatchEvent' = do
 -------------------------------------------------------------------------------
 hush :: Either e a -> Maybe a
 hush (Right a) = Just a
-hush _ = Nothing
+hush _         = Nothing
 
 
 -------------------------------------------------------------------------------

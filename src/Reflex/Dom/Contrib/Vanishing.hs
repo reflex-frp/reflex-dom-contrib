@@ -1,13 +1,12 @@
-{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Reflex.Dom.Contrib.Vanishing where
 
 ------------------------------------------------------------------------------
-import Data.Map (Map)
-import Data.Monoid
-import Data.Text (Text)
-import Reflex
-import Reflex.Dom.Core
+import           Data.Map        (Map)
+import           Data.Text       (Text)
+import           Reflex
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 
@@ -28,22 +27,22 @@ data ElementVisibility
 ------------------------------------------------------------------------------
 -- | Returns attributes representing the specified visibility.
 visibilityAttrs :: ElementVisibility -> Map Text Text
-visibilityAttrs DisplayNone = "style" =: "display: none;"
+visibilityAttrs DisplayNone      = "style" =: "display: none;"
 visibilityAttrs VisibilityHidden = "style" =: "visibility: hidden;"
-visibilityAttrs Visible = mempty
+visibilityAttrs Visible          = mempty
 
 
 ------------------------------------------------------------------------------
 -- | Returns VisibilityHidden when argument is True.  Visible otherwise.
 hiddenWhen :: Bool -> ElementVisibility
-hiddenWhen True = VisibilityHidden
+hiddenWhen True  = VisibilityHidden
 hiddenWhen False = Visible
 
 
 ------------------------------------------------------------------------------
 -- | Returns DisplayNone when argument is True.  Visible otherwise.
 displayNoneWhen :: Bool -> ElementVisibility
-displayNoneWhen True = DisplayNone
+displayNoneWhen True  = DisplayNone
 displayNoneWhen False = Visible
 
 
@@ -115,7 +114,7 @@ goneWhen
 goneWhen defWidget existence widget = dyn (dontShow <$> existence)
   where
     dontShow NotInDom = defWidget
-    dontShow InDom = widget
+    dontShow InDom    = widget
 
 
 ------------------------------------------------------------------------------

@@ -12,19 +12,18 @@
 module Reflex.Dom.Contrib.Pagination where
 
 ------------------------------------------------------------------------------
-import           Control.Lens         hiding ((.=))
+import           Control.Lens           hiding ((.=))
 import           Data.Aeson
-import           Data.ByteString.Lazy (ByteString)
+import           Data.ByteString.Lazy   (ByteString)
 import           Data.Default
-import           Data.Function        (on)
+import           Data.Function          (on)
 import           Data.List
-import           Data.Ord
-import           Data.Map (Map)
-import qualified Data.Map as M
+import           Data.Map               (Map)
+import qualified Data.Map               as M
 import           Data.Maybe
-import           Data.Monoid
-import           Data.Text (Text)
-import qualified Data.Text as T
+import           Data.Ord
+import           Data.Text              (Text)
+import qualified Data.Text              as T
 import           Data.Time
 import           Data.Word
 import           Reflex

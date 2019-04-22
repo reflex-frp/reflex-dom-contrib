@@ -5,8 +5,6 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE RecursiveDo         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE FlexibleContexts    #-}
 {-|
 
 Convenience functions for dealing with XMLHttpRequest.
@@ -19,14 +17,13 @@ module Reflex.Dom.Contrib.Xhr where
 import           Control.Lens
 import           Control.Monad.Reader
 import           Data.Aeson
-import           Data.ByteString.Lazy (ByteString)
+import           Data.ByteString.Lazy   (ByteString)
 import           Data.Default
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Data.Monoid
+import           Data.Map               (Map)
+import qualified Data.Map               as M
 import           Data.String.Conv
-import           Data.Text (Text)
-import qualified Data.Text as T
+import           Data.Text              (Text)
+import qualified Data.Text              as T
 import           Network.HTTP.Types.URI
 ------------------------------------------------------------------------------
 import           Reflex
