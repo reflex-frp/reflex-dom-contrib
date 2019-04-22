@@ -157,7 +157,7 @@ instance MonadState s m => MonadState s (RouteT t m) where
   get = lift get
   put s = lift $ put s
 
-instance MonadDynamicWriter t w m => MonadDynamicWriter t w (RouteT t m) where
+instance DynamicWriter t w m => DynamicWriter t w (RouteT t m) where
   tellDyn = lift . tellDyn
 
 instance EventWriter t w m => EventWriter t w (RouteT t m) where
