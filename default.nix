@@ -1,8 +1,8 @@
 # { rpRef ? "384cd850f3adf1d404bced2424b5f6efb0f415f2"
 # , rpSha ? "1ws77prqx8khmp8j6br1ij4k2v4dlgv170r9fmg0p1jivfbn8y9d"
 # }:
-{ rpRef ? "f3ff81d519b226752c83eefd4df6718539c3efdc"
-, rpSha ? "1ijxfwl36b9b2j4p9j3bv8vf7qfi570m1c5fjyvyac0gy0vi5g8j"
+{ rpRef ? "a15d3a2411e7ca7d4ee4853b57c72fe83faee272"
+, rpSha ? "1dsvw0lah7761vndip1hqal4fjpjv84ravinnfhy83jgfav5ivna"
 }:
 
 let rp = builtins.fetchTarball {
