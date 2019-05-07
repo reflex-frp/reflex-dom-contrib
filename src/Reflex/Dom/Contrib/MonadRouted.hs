@@ -10,6 +10,7 @@
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE CPP                        #-}
 
 {-|
 
@@ -157,8 +158,13 @@ instance MonadState s m => MonadState s (RouteT t m) where
   get = lift get
   put s = lift $ put s
 
+#if MIN_VERSION_reflex(0,6,0)
+instance DynamicWriter t w m => DynamicWriter t w (RouteT t m) where
+  tellDyn = lift . tellDyn
+#else
 instance MonadDynamicWriter t w m => MonadDynamicWriter t w (RouteT t m) where
   tellDyn = lift . tellDyn
+#endif
 
 instance EventWriter t w m => EventWriter t w (RouteT t m) where
   tellEvent = lift . tellEvent
