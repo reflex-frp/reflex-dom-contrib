@@ -9,7 +9,7 @@ add new things rather than changing existing ones.  If you are wondering if
 there is some convenience code or abstractions and you don't find them in
 reflex or reflex-dom, look here and see if anyone has already done it.  If you
 have general-purpose reflex code that you find useful that is not already
-here, add it to this repository and send us a pull request.  
+here, add it to this repository and send us a pull request.
 
 Over time the goal is that this repository will help us discover good
 abstractions for reflex development that can eventually be merged upstream to
@@ -19,19 +19,10 @@ This is that place.  Have fun!
 
 ## Contributing
 
-The easiest way to build reflex-dom-contrib is to clone the [reflex-platform
-repository](https://github.com/reflex-frp/reflex-platform). Assuming you cloned it
-in your home directory you can then do this:
+The easiest way to build reflex-dom-contrib is with Nix. To build the package,
+use nix-build like this:
 
-    cd path/to/reflex-dom-contrib
-    ~/reflex-platform/scripts/work-on ghcjs ./.
+    nix-build -A ghc.reflex-dom-contrib
 
-That will put you in a nix-shell with the necessary environment. Then you can
-build like this:
-
-    cabal install --ghcjs
-
-or
-
-    cabal configure --ghcjs
-    cabal build
+To enter a shell with all the dependencies, just run `nix-shell`. Then you can
+build with cabal as with any other Haskell package.
