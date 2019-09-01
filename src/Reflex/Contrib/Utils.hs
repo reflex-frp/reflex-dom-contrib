@@ -71,7 +71,7 @@ extractDyn f = join . fmap f
 -- | This function has the slight flaw that if (f initValue) == False, it will
 -- still get through.
 filterDyn
-    :: (MonadHold t m, Reflex t)
+    :: (Reflex t, MonadHold t m)
     => (a -> Bool)
     -> Dynamic t a
     -> m (Dynamic t a)
@@ -90,5 +90,3 @@ fmapMaybeDyn
 fmapMaybeDyn f d = do
     fmap join $ holdDyn (f <$> d) $ fmap (constDyn . Just) $
       fmapMaybe f (updated d)
-
-

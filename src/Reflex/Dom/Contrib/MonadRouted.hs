@@ -41,7 +41,6 @@ import           Control.Monad.State.Strict
 import           Data.Coerce
 import qualified Data.List                  as L
 import           Data.Maybe
-import           Data.Monoid
 import qualified Data.Semigroup             as Sem
 import           Data.Text                  (Text)
 import qualified Data.Text                  as T

@@ -5,7 +5,6 @@ module Reflex.Dom.Contrib.Widgets.DynamicList where
 
 ------------------------------------------------------------------------------
 import qualified Data.Map as M
-import           Data.Monoid
 import           Reflex
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
@@ -48,4 +47,3 @@ dynamicList w removeEvent addFunc addEvent initList = do
     remove res = switch (mergeWith (<>) . map f . M.toList <$> res)
       where
         f (k,b) = M.singleton k Nothing <$ removeEvent b
-

@@ -10,6 +10,7 @@ module Reflex.Dom.Contrib.Widgets.ScriptDependent
 
 import           Control.Concurrent          (forkIO, threadDelay)
 import           Control.Monad               (void)
+import           Control.Monad.Fix
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
 import           Reflex.Dom.Core
 #ifdef ghcjs_HOST_OS
@@ -122,7 +123,9 @@ injectScriptEvent symbol evUrl = performEventAsync $ ffor evUrl $ \url cb ->
 -- widget. This switch happens whether or not the symbol gets defined by the
 -- script, so make sure you have the correct symbol!
 widgetHoldUntilDefined
-  :: (MonadWidget t m, PerformEvent t m, TriggerEvent t m)
+  :: (MonadIO (Performable m), PerformEvent t m,
+      TriggerEvent t m, DomBuilder t m, MonadHold t m,
+      MonadFix m)
   => String
   -- ^ Symbol, for instance the value "dhtmlxCalendarObject", as in
   -- window.dhtmlxCalendarObject

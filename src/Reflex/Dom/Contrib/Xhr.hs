@@ -23,7 +23,6 @@ import           Data.ByteString.Lazy (ByteString)
 import           Data.Default
 import           Data.Map (Map)
 import qualified Data.Map as M
-import           Data.Monoid
 import           Data.String.Conv
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -121,5 +120,3 @@ performJsonAjax req =
       return ()
   where
     mkRequest url a = toPost url (T.unpack $ formEncodeJSON a)
-
-

@@ -36,7 +36,6 @@ import           Data.Bimap (Bimap)
 import qualified Data.Map as M
 import qualified Data.Bimap as BM
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Readable
 import           Data.String.Conv
 import           Data.Text (Text)
@@ -545,4 +544,3 @@ dropdownBimap k0 options (DropdownConfig setK attrs) = do
   where
     safeLookupR :: (Ord x, Ord y) => Bimap x y -> y -> Maybe x
     safeLookupR bi a = BM.lookupR a bi
-

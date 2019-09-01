@@ -37,7 +37,6 @@ import           Data.Bifunctor
 import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
-import           Data.Monoid
 import           Data.Text (Text)
 import           Reflex
 import           Reflex.Dom.Core
@@ -256,4 +255,3 @@ keyToMaybe
     -> Event t (Maybe a)
     -> m (Event t (Maybe b, c))
 keyToMaybe f = liftM (fmap $ first Just) . f . fmapMaybe id
-

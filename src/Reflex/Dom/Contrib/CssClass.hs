@@ -15,7 +15,6 @@ module Reflex.Dom.Contrib.CssClass where
 import           Data.Default
 import           Data.Map        (Map)
 import qualified Data.Map        as M
-import           Data.Monoid
 import qualified Data.Semigroup  as Sem
 import           Data.Set        (Set)
 import qualified Data.Set        as S
@@ -108,7 +107,7 @@ elDynKlass' e k = elDynAttr' e (classAttr <$> k)
 --   We are generic in the key, to support reflex-dom `AttributeName` Maps as
 --   well. (Used in `ElementConfig`.)
 addToClassAttr
-    :: (IsString key, Ord key) 
+    :: (IsString key, Ord key)
     => CssClass
     -> Map key Text
     -> Map key Text

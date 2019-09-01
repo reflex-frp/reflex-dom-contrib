@@ -22,7 +22,6 @@ import           Data.Ord
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Data.Time
@@ -243,4 +242,3 @@ isSubSearch pq pv =
     (_prOffset pr == 0)
   where
     pr = _pvValue pv
-

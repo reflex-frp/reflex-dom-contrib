@@ -4,7 +4,6 @@ module Reflex.Dom.Contrib.Vanishing where
 
 ------------------------------------------------------------------------------
 import Data.Map (Map)
-import Data.Monoid
 import Data.Text (Text)
 import Reflex
 import Reflex.Dom.Core
@@ -49,20 +48,20 @@ displayNoneWhen False = Visible
 
 ------------------------------------------------------------------------------
 -- | Convenient helper for showing a vanishing div.
-vanishingDiv :: MonadWidget t m => Dynamic t ElementVisibility -> m a -> m a
+vanishingDiv :: (DomBuilder t m, PostBuild t m) => Dynamic t ElementVisibility -> m a -> m a
 vanishingDiv = vanishing "div"
 
 
 ------------------------------------------------------------------------------
 -- | Convenient helper for showing a vanishing span.
-vanishingSpan :: MonadWidget t m => Dynamic t ElementVisibility -> m a -> m a
+vanishingSpan :: (DomBuilder t m, PostBuild t m) => Dynamic t ElementVisibility -> m a -> m a
 vanishingSpan = vanishing "span"
 
 
 ------------------------------------------------------------------------------
 -- | General function for showing a vanishing element.
 vanishing
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => Text
     -> Dynamic t ElementVisibility
     -> m a
@@ -73,7 +72,7 @@ vanishing tagName vis = elDynAttr tagName (visibilityAttrs <$> vis)
 ------------------------------------------------------------------------------
 -- | General function for showing a vanishing element.
 vanishingAttr
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => Text
     -> Map Text Text
     -> Dynamic t ElementVisibility
@@ -86,7 +85,7 @@ vanishingAttr tagName attrs vis =
 ------------------------------------------------------------------------------
 -- | General function for showing a vanishing element.
 vanishingDynAttr
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => Text
     -> Dynamic t (Map Text Text)
     -> Dynamic t ElementVisibility
@@ -107,7 +106,7 @@ data DomExistence = InDom | NotInDom
 -- a display:none or visibility:hidden style when the element is invisible,
 -- this function removes the widget from the DOM completely.
 goneWhen
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => m a
     -> Dynamic t DomExistence
     -> m a
@@ -122,7 +121,7 @@ goneWhen defWidget existence widget = dyn (dontShow <$> existence)
 -- | This function uses a Maybe value to control whether a widget gets placed
 -- in the DOM or not.
 maybeGone
-    :: MonadWidget t m
+    :: (DomBuilder t m, PostBuild t m)
     => m b
     -> (a -> m b)
     -> Dynamic t (Maybe a)

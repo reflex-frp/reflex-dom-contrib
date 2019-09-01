@@ -20,6 +20,7 @@ module Reflex.Dom.Contrib.Utils
   , listWithKeyAndSelection
   , waitUntilJust
   , alertEvent
+  , alertEvents
   , confirmEvent
   , getWindowLocationPath
   , windowHistoryPushState
@@ -28,6 +29,8 @@ module Reflex.Dom.Contrib.Utils
 
 ------------------------------------------------------------------------------
 import           Control.Concurrent
+import           Control.Monad
+import           Control.Monad.Fail
 import           Control.Monad.Reader
 import           Data.Map               (Map)
 import           Data.Text              (Text)
@@ -52,7 +55,7 @@ tshow = T.pack . show
 -- | Convenient function that pops up a javascript alert dialog box when an
 -- event fires with a message to display.
 alertEvent
-    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m))
+    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m), MonadFail m)
     => (a -> String) -> Event t a -> m ()
 alertEvent str e = do
   Just window <- currentWindow
@@ -62,7 +65,7 @@ alertEvent str e = do
 -- | Convenient function that pops up multiple javascript alert dialog box
 -- sequentially when an event fires with messages to display.
 alertEvents
-    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m))
+    :: (PerformEvent t m, MonadJSM m, MonadJSM (Performable m), MonadFail m)
     => (a -> [String]) -> Event t a -> m ()
 alertEvents str e = do
   Just window <- currentWindow
@@ -72,7 +75,7 @@ alertEvents str e = do
 -- | Convenient function that pops up a javascript confirmation dialog box
 -- when an event fires with a message to display.
 confirmEvent
-    :: MonadWidget t m
+    :: (MonadJSM (Performable m), MonadFail (Performable m), PerformEvent t m)
     => (a -> String) -> Event t a -> m (Event t a)
 confirmEvent str e = liftM (fmapMaybe id) $ performEvent (confirm <$> e)
   where

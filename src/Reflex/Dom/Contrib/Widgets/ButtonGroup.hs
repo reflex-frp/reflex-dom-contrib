@@ -15,6 +15,7 @@ module Reflex.Dom.Contrib.Widgets.ButtonGroup (
 ) where
 
 ------------------------------------------------------------------------------
+import           Control.Monad.Fail
 import           Control.Monad.IO.Class     (liftIO)
 import           Data.Bool                  (bool)
 import qualified Data.Map                   as Map
@@ -147,7 +148,7 @@ bootstrapButtonGroup dynEntryList cfg = do
 
 ------------------------------------------------------------------------------
 -- | A group of radio buttons in a table layout
-radioGroup :: forall t m a.(MonadWidget t m, Eq a, MonadJSM IO)
+radioGroup :: forall t m a.(MonadWidget t m, Eq a, MonadJSM IO, MonadFail m)
            => Dynamic t Text
               -- ^ The name for the button group (different groups should be given different names)
            -> Dynamic t [(a,Text)]

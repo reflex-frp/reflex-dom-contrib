@@ -19,7 +19,6 @@ import           Data.Bifunctor
 import           Data.Either
 import           Data.Map (Map)
 import           Data.Text (Text)
-import           Data.Monoid
 import           Reflex
 import           Reflex.Contrib.Utils
 import           Reflex.Dom.Core
@@ -123,5 +122,3 @@ mkModalBody header footer body = do
       let closem1 = leftmost
             [dismiss, cancel, () <$ ffilter isRight resE1]
       return (resE1, closem1)
-
-
