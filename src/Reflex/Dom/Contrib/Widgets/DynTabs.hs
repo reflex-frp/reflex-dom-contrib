@@ -30,6 +30,7 @@ module Reflex.Dom.Contrib.Widgets.DynTabs
   ) where
 
 ------------------------------------------------------------------------------
+import           Control.Monad.Fix
 import           Data.Default
 import           Data.Map                 (Map)
 import qualified Data.Map                 as M
@@ -70,9 +71,16 @@ data TabBar t tab = TabBar
 
 ------------------------------------------------------------------------------
 -- | Renders a dynamic list of tabs comprising a tab bar.
-tabBar :: forall t m tab. (MonadWidget t m, Tab t m tab)
-    => TabBarConfig t tab
-    -> m (TabBar t tab)
+tabBar
+  :: forall t m tab.
+     ( DomBuilder t m
+     , PostBuild t m
+     , MonadHold t m
+     , MonadFix m
+     , Tab t m tab
+     )
+  => TabBarConfig t tab
+  -> m (TabBar t tab)
 tabBar (TabBarConfig initialSelected initialTabs tabs curTab) = do
     rec let tabFunc = mapM (mkTab currentTab)
         foo <- widgetHoldHelper tabFunc initialTabs tabs
@@ -83,7 +91,7 @@ tabBar (TabBarConfig initialSelected initialTabs tabs curTab) = do
 
 ------------------------------------------------------------------------------
 mkTab
-    :: (MonadWidget t m, Tab t m tab)
+    :: (DomBuilder t m, Tab t m tab)
     => Dynamic t tab
     -> tab
     -> m (Event t tab)
@@ -96,7 +104,10 @@ mkTab currentTab t = do
 -- | Convenience function for constructing a tab pane that uses display none
 -- to hide the tab when it is not selected.
 tabPane
-    :: (MonadWidget t m, Eq tab)
+    :: ( DomBuilder t m
+       , PostBuild t m
+       , Eq tab
+       )
     => Map Text Text
     -> Dynamic t tab
     -> tab

@@ -107,7 +107,9 @@ setWindowLoc url = do
 -- | A common form for widgetHold calls that mirrors the pattern seen in hold
 -- and holdDyn.
 widgetHoldHelper
-    :: MonadWidget t m
+    :: ( MonadHold t m
+       , Adjustable t m
+       )
     => (a -> m b)
     -> a
     -> Event t a
@@ -117,7 +119,12 @@ widgetHoldHelper f eDef e = widgetHold (f eDef) (f <$> e)
 
 ------------------------------------------------------------------------------
 -- | Simple debug function that prints a message on postBuild.
-putDebugLn :: MonadWidget t m => String -> m ()
+putDebugLn
+  :: ( PostBuild t m
+     , PerformEvent t m
+     , MonadIO (Performable m)
+     )
+  => String -> m ()
 putDebugLn str = do
     pb <- getPostBuild
     putDebugLnE pb (const str)
@@ -126,7 +133,11 @@ putDebugLn str = do
 ------------------------------------------------------------------------------
 -- | Prints a string when an event fires.  This differs slightly from
 -- traceEvent because it will print even if the event is otherwise unused.
-putDebugLnE :: MonadWidget t m => Event t a -> (a -> String) -> m ()
+putDebugLnE
+  :: ( PerformEvent t m
+     , MonadIO (Performable m)
+     )
+  => Event t a -> (a -> String) -> m ()
 putDebugLnE e mkStr = do
     performEvent_ (liftIO . putStrLn . mkStr <$> e)
 
@@ -134,7 +145,13 @@ putDebugLnE e mkStr = do
 ------------------------------------------------------------------------------
 -- | A generalized version of the one in reflex-dom.
 listWithKeyAndSelection
-    :: forall t m k v a. (MonadWidget t m, Ord k)
+    :: forall t m k v a.
+       ( PostBuild t m
+       , Adjustable t m
+       , MonadHold t m
+       , MonadFix m
+       , Ord k
+       )
     => Dynamic t k
     -> Dynamic t (Map k v)
     -> (k -> Dynamic t v -> Dynamic t Bool -> m a)
