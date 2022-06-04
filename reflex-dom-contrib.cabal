@@ -77,7 +77,7 @@ library
     random                 >= 1.0    && < 1.2,
     readable               >= 0.3    && < 0.4,
     ref-tf                 >= 0.4    && < 0.5,
-    reflex                 >= 0.5    && < 0.8,
+    reflex                 >= 0.5    && < 0.9,
     reflex-dom-core        >= 0.4    && < 0.7,
     safe                   >= 0.3    && < 0.4,
     stm                    >= 2.1    && < 2.6,
