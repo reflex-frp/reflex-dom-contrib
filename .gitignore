@@ -15,3 +15,5 @@ TAGS
 .DS*
 cabal.sandbox.config
 *.jsmod
+dist-newstyle
+result

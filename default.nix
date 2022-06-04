@@ -1,14 +1,7 @@
-{ rpRef ? "4b4a2c8679d6f3042180d2974b31c43bfc506b91"
-, rpSha ? "185i8ccqk0xc05ckd921fs7nnaj88gihmlazny1dk004hxq78cj2"
-}:
-
-let rp = builtins.fetchTarball {
-  url = "https://github.com/reflex-frp/reflex-platform/archive/${rpRef}.tar.gz";
-  sha256 = rpSha;
-};
-
+{}:
+let rp = import ./reflex-platform {};
 in
-  (import rp {}).project ({ pkgs, ... }:
+  rp.project ({ pkgs, ... }:
   let gitignore = pkgs.callPackage (pkgs.fetchFromGitHub {
         owner = "siers";
         repo = "nix-gitignore";
