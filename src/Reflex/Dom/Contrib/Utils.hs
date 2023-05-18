@@ -109,6 +109,7 @@ setWindowLoc url = do
 widgetHoldHelper
     :: ( MonadHold t m
        , Adjustable t m
+       , DomBuilder t m
        )
     => (a -> m b)
     -> a
