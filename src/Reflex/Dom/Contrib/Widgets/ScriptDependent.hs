@@ -1,7 +1,9 @@
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+#if __GLASGOW_HASKELL__ < 900
 {-# LANGUAGE JavaScriptFFI       #-}
+#endif
 {-# LANGUAGE LambdaCase          #-}
 -- | This module provides a method of expressing widgets that depend on an external javascript source.
 module Reflex.Dom.Contrib.Widgets.ScriptDependent

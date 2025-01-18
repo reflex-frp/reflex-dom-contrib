@@ -2,7 +2,9 @@
 {-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+#if __GLASGOW_HASKELL__ < 900
 {-# LANGUAGE JavaScriptFFI            #-}
+#endif
 {-# LANGUAGE LambdaCase               #-}
 {-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE RankNTypes               #-}

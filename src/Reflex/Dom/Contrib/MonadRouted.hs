@@ -36,6 +36,7 @@ module Reflex.Dom.Contrib.MonadRouted
 
 ------------------------------------------------------------------------------
 import           Control.Monad.Exception
+import           Control.Monad.Fix
 import           Control.Monad.Reader
 import           Control.Monad.Ref
 import           Control.Monad.State.Strict

@@ -19,6 +19,7 @@ module Reflex.Dom.Contrib.Xhr where
 import           Control.Lens
 import           Control.Monad.Reader
 import           Data.Aeson
+import qualified Data.Aeson.Key as Key
 import           Data.ByteString.Lazy (ByteString)
 import           Data.Default
 import           Data.Map (Map)
@@ -50,8 +51,14 @@ formEncode m =
 formEncodeJSON :: ToJSON a => a -> Text
 formEncodeJSON a = case toJSON a of
     Object m ->
-      formEncode $ M.fromList $ map (bimap id encode) $ itoList m
+      formEncode $ M.fromList $ map (bimap keyToText encode) $ itoList m
     _ -> error "formEncodeJSON requires an Object"
+  where
+#if MIN_VERSION_aeson(2,0,0)
+    keyToText = Key.toText
+#else
+    keyToText = id
+#endif
 
 
 ------------------------------------------------------------------------------
