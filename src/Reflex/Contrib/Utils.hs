@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+#if __GLASGOW_HASKELL__ < 900
 {-# LANGUAGE JavaScriptFFI            #-}
+#endif
 {-# LANGUAGE RecursiveDo              #-}
 
 module Reflex.Contrib.Utils where

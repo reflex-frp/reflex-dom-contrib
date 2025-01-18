@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+#if __GLASGOW_HASKELL__ < 900
 {-# LANGUAGE JavaScriptFFI            #-}
+#endif
 
 {-|
 
@@ -80,4 +82,3 @@ foreign import javascript unsafe "$1['shiftKey']"
 getKeyEvent :: EventM e KeyboardEvent KeyEvent
 getKeyEvent = error "getKeyEvent: can only be used with GHCJS"
 #endif
-

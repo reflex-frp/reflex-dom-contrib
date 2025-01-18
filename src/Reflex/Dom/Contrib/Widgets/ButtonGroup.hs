@@ -79,7 +79,7 @@ buttonGroup htmlTag drawDynBtn dynButtons (WidgetConfig wcSet wcInit wcAttrs) = 
 -- | Modified selectViewListWithKey from Reflex.Dom.Widget.Basic,
 --   This one also passes back a 'Dynamic t Bool' indicating that at least
 --   one child element is in focus
-selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k)
+selectViewListWithKey_' :: forall t m k v a. (MonadWidget t m, Ord k, Eq v)
                         => Dynamic t k
                         -> Dynamic t (Map.Map k v)
                         -> (k -> Dynamic t v

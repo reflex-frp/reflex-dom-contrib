@@ -1,7 +1,10 @@
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE GADTs                    #-}
+#if __GLASGOW_HASKELL__ < 900
 {-# LANGUAGE JavaScriptFFI            #-}
+#endif
 {-# LANGUAGE RankNTypes               #-}
 {-# LANGUAGE GADTs                    #-}
 {-# LANGUAGE FlexibleContexts         #-}
@@ -30,6 +33,7 @@ module Reflex.Dom.Contrib.Utils
 ------------------------------------------------------------------------------
 import           Control.Concurrent
 import           Control.Monad
+import           Control.Monad.Fix
 import           Control.Monad.Fail
 import           Control.Monad.Reader
 import           Data.Map               (Map)
@@ -151,6 +155,7 @@ listWithKeyAndSelection
        , MonadHold t m
        , MonadFix m
        , Ord k
+       , Eq v
        )
     => Dynamic t k
     -> Dynamic t (Map k v)

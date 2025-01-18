@@ -99,7 +99,7 @@ boundedInsert (Just lim) (c, (k, v)) m =
 -- elements are kept in the DOM at any one time and prunes the least recently
 -- used items if that size is exceeded.
 boundedSelectList'
-    :: (MonadWidget t m, Ord k)
+    :: (MonadWidget t m, Ord k, Eq v)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t k
@@ -146,7 +146,7 @@ boundedSelectList' itemLimit curSelected updateEvent
 -- results, this function only returns the result for the item that is
 -- currently selected.
 boundedSelectList0
-    :: (MonadWidget t m, Ord k)
+    :: (MonadWidget t m, Ord k, Eq v)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t a
@@ -195,7 +195,7 @@ boundedSelectList0 itemLimit curSelected updateEvent getKey shouldRunExpensive
 -- results, this function only returns the result for the item that is
 -- currently selected.
 boundedSelectList
-    :: (MonadWidget t m, Ord k)
+    :: (MonadWidget t m, Ord k, Eq v)
     => Limit
     -- ^ Maximum number of items to keep in the DOM at a time
     -> Dynamic t a
